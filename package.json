@@ -1,0 +1,23 @@
+{
+  "name": "bac2002_dapp_project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "live-server UI --entry-file=main_dashboard.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Olilian/BAC2002_DApp_Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Olilian/BAC2002_DApp_Project/issues"
+  },
+  "homepage": "https://github.com/Olilian/BAC2002_DApp_Project#readme",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

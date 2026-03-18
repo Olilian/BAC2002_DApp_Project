@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChainFactor — Seller Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Seller-specific styles */
+    .content-grid  { display: grid; grid-template-columns: 1fr 300px; gap: 16px; }
+
+    .tag           { display: inline-flex; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+    .tag-blue      { background: var(--accent-light); color: var(--accent); }
+    .tag-green     { background: var(--green-light);  color: var(--green);  }
+
+    .prev-val-green { color: var(--green); }
+    .prev-val-red   { color: var(--red);   }
+    .prev-val-accent{ color: var(--accent);}
+
+    .live-box      { background: var(--green-light); border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+    .live-label    { font-size: 11px; font-weight: 600; color: var(--green); }
+    .live-timer    { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; color: var(--text); }
+    .live-bid-lbl  { font-size: 10px; color: var(--muted); }
+    .live-bid-val  { font-size: 18px; font-weight: 600; color: var(--green); text-align: right; }
+
+    .metrics3      { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+    .mbox          { background: var(--bg); border-radius: 7px; padding: 11px; text-align: center; }
+    .mlbl          { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+    .mval          { font-size: 15px; font-weight: 600; }
+
+    .bid-row       { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--bg); }
+    .bid-row:last-child { border-bottom: none; }
+    .bid-rank      { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0; }
+    .r1            { background: var(--green-light);  color: var(--green);  }
+    .r2            { background: var(--accent-light); color: var(--accent); }
+    .r3            { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+    .bid-addr      { font-family: 'DM Mono', monospace; font-size: 11px; }
+    .bid-time      { font-size: 10px; color: var(--muted); }
+    .bid-amount    { font-weight: 600; font-size: 13px; }
+
+    .stat2         { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat2-box     { background: var(--bg); border-radius: 7px; padding: 12px; text-align: center; }
+    .stat2-lbl     { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+    .stat2-val     { font-size: 18px; font-weight: 600; }
+
+    .how-item      { display: flex; gap: 10px; margin-bottom: 12px; }
+    .how-num       { width: 20px; height: 20px; border-radius: 50%; background: var(--accent-light); color: var(--accent); font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .how-text      { font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+    .how-text strong { color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-name"><div class="logo-dot"></div> ChainFactor</div>
+      <div class="logo-sub">Invoice Factoring Protocol</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Main</div>
+      <a class="nav-item"        href="main_dashboard.html"><span class="nav-icon">◈</span> Dashboard</a>
+      <a class="nav-item active" href="seller.html">        <span class="nav-icon">↑</span>  Seller Portal</a>
+      <a class="nav-item"        href="buyer.html">         <span class="nav-icon">⊕</span> Auction House</a>
+      <div class="nav-label">Finance</div>
+      <a class="nav-item" href="#"><span class="nav-icon">≡</span> My Invoices</a>
+      <a class="nav-item" href="#"><span class="nav-icon">◷</span> History</a>
+      <a class="nav-item" href="#"><span class="nav-icon">⬡</span> Contracts</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="wallet-box">
+        <div class="wallet-status"><div class="wdot"></div> MetaMask Connected</div>
+        <div class="wallet-addr">0x4A2B...3e9F · Sepolia</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ── -->
+  <main class="main">
+
+    <div class="net-bar">
+      <div class="ndot"></div>
+      <strong>Ethereum Sepolia Testnet</strong>
+      <span class="sep">·</span> Invoice Registry: 0x8fA2...c4D1
+      <span class="sep">·</span> Auction: 0x3bC9...a7E2
+    </div>
+
+    <div class="topbar">
+      <div>
+        <div class="page-title">Seller Portal</div>
+        <div class="page-sub">Create invoices, start auctions, receive cash instantly</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-outline" onclick="show('my-auction')">My Live Auction</button>
+        <button class="btn btn-primary" onclick="show('create')">+ Create Invoice</button>
+      </div>
+    </div>
+
+    <!-- Step Indicator -->
+    <div class="steps">
+      <div class="step done">
+        <div class="step-num sn-done">✓</div>
+        <div class="step-text"><div class="step-title">Create Invoice</div><div class="step-desc">Register on-chain</div></div>
+      </div>
+      <div class="step-arr">→</div>
+      <div class="step active">
+        <div class="step-num sn-active">2</div>
+        <div class="step-text"><div class="step-title">Start Auction</div><div class="step-desc">Set bid parameters</div></div>
+      </div>
+      <div class="step-arr">→</div>
+      <div class="step">
+        <div class="step-num sn-idle">3</div>
+        <div class="step-text"><div class="step-title">Receive USDC</div><div class="step-desc">Instant settlement</div></div>
+      </div>
+      <div class="step-arr">→</div>
+      <div class="step">
+        <div class="step-num sn-idle">4</div>
+        <div class="step-text"><div class="step-title">Buyer Pays LP</div><div class="step-desc">At maturity date</div></div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" id="tab-create"     onclick="show('create')">Create Invoice</div>
+      <div class="tab"        id="tab-my-auction" onclick="show('my-auction')">My Live Auction</div>
+      <div class="tab"        id="tab-history"    onclick="show('history')">Settled History</div>
+    </div>
+
+    <!-- ── CREATE TAB ── -->
+    <div id="v-create">
+      <div class="content-grid">
+
+        <!-- Invoice Form -->
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">Invoice Details</div>
+            <span class="tag tag-blue">Step 1 of 2</span>
+          </div>
+          <div class="card-bd">
+            <div class="form-grid">
+              <div class="field fg-full">
+                <label>Invoice Number</label>
+                <input type="text" value="INV-2026-042" placeholder="INV-2026-042">
+              </div>
+              <div class="field">
+                <label>Buyer / Debtor Company</label>
+                <input type="text" placeholder="e.g. Acme Corporation">
+              </div>
+              <div class="field">
+                <label>Buyer Wallet Address</label>
+                <input type="text" placeholder="0x...">
+                <span class="input-hint">Must match registered debtor address</span>
+              </div>
+              <div class="field">
+                <label>Face Value (USDC)</label>
+                <input type="number" placeholder="10000">
+              </div>
+              <div class="field">
+                <label>Payment Due Date</label>
+                <input type="date" value="2026-05-18">
+              </div>
+              <div class="field">
+                <label>Service / Goods Description</label>
+                <input type="text" placeholder="e.g. Software Development">
+              </div>
+              <div class="field">
+                <label>Delivery Date</label>
+                <input type="date" value="2026-03-18">
+              </div>
+              <div class="field fg-full">
+                <label>Notes</label>
+                <textarea placeholder="Any additional details..."></textarea>
+              </div>
+              <div class="field fg-full">
+                <label>Invoice Document (PDF)</label>
+                <div class="upload" onclick="this.querySelector('input').click()">
+                  <div class="upload-icon">📄</div>
+                  <div class="upload-text">Drop file here or <strong>click to upload</strong></div>
+                  <div style="font-size:10px; color:var(--muted); margin-top:3px;">Document hash stored on-chain</div>
+                  <input type="file" accept=".pdf" style="display:none">
+                </div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div style="font-size:13px; font-weight:600; margin-bottom:14px;">Auction Settings</div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label>Minimum Bid (%)</label>
+                <input type="number" value="90" min="80" max="99">
+                <span class="input-hint">90% of $10,000 = min bid of $9,000</span>
+              </div>
+              <div class="field">
+                <label>Auction Duration</label>
+                <select>
+                  <option>24 hours</option>
+                  <option>48 hours</option>
+                  <option>12 hours</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="preview">
+              <div class="prev-row"><span class="prev-lbl">Face Value</span>              <span class="prev-val prev-val-accent">$10,000 USDC</span></div>
+              <div class="prev-row"><span class="prev-lbl">Minimum Bid (90%)</span>      <span class="prev-val">$9,000 USDC</span></div>
+              <div class="prev-row"><span class="prev-lbl">Max discount</span>            <span class="prev-val prev-val-red">−$1,000</span></div>
+              <div class="prev-row"><span class="prev-lbl">Auction ends</span>            <span class="prev-val">19 Mar 2026 · 14:32</span></div>
+              <div class="prev-row"><span class="prev-lbl">You receive (estimated)</span><span class="prev-val prev-val-green">$9,000 – $9,999 USDC</span></div>
+            </div>
+
+            <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+              <button class="btn btn-ghost">Save Draft</button>
+              <button class="btn btn-primary" onclick="submitInvoice(event)">Register &amp; Start Auction →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div class="card">
+            <div class="card-hd"><div class="card-title">How It Works</div></div>
+            <div class="card-bd">
+              <div class="how-item"><div class="how-num">1</div><div class="how-text"><strong>Register Invoice</strong> — hash stored on-chain via Invoice Registry</div></div>
+              <div class="how-item"><div class="how-num">2</div><div class="how-text"><strong>24-Hour Auction</strong> — LPs bid competitively, highest wins</div></div>
+              <div class="how-item"><div class="how-num">3</div><div class="how-text"><strong>Receive USDC</strong> — funds released instantly at auction close</div></div>
+              <div class="how-item"><div class="how-num">4</div><div class="how-text"><strong>Buyer Pays LP</strong> — full amount paid to escrow at due date</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Your Stats</div></div>
+            <div class="card-bd">
+              <div class="stat2">
+                <div class="stat2-box"><div class="stat2-lbl">Invoices</div><div class="stat2-val" style="color:var(--accent)">9</div></div>
+                <div class="stat2-box"><div class="stat2-lbl">Settled</div><div class="stat2-val" style="color:var(--green)">7</div></div>
+                <div class="stat2-box"><div class="stat2-lbl">Cash Out</div><div class="stat2-val" style="color:var(--green); font-size:15px">$261K</div></div>
+                <div class="stat2-box"><div class="stat2-lbl">Avg Rate</div><div class="stat2-val" style="color:var(--yellow); font-size:15px">97.5%</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── MY AUCTION TAB ── -->
+    <div id="v-my-auction" style="display:none;">
+      <div class="content-grid">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">INV-2026-041 · Acme Corp</div>
+            <span class="tag tag-green">Auction Live</span>
+          </div>
+          <div class="card-bd">
+            <div class="live-box">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div class="wdot"></div>
+                <div>
+                  <div class="live-label">AUCTION ENDS IN</div>
+                  <div class="live-timer" id="live-t">06:14:32</div>
+                </div>
+              </div>
+              <div>
+                <div class="live-bid-lbl">Leading bid</div>
+                <div class="live-bid-val">$9,750 USDC</div>
+              </div>
+            </div>
+
+            <div class="metrics3">
+              <div class="mbox"><div class="mlbl">Face Value</div><div class="mval">$10,000</div></div>
+              <div class="mbox"><div class="mlbl">Min Bid</div><div class="mval" style="color:var(--yellow)">$9,000</div></div>
+              <div class="mbox"><div class="mlbl">Bids</div><div class="mval" style="color:var(--accent)">3</div></div>
+            </div>
+
+            <div style="font-size:13px; font-weight:600; margin-bottom:12px;">Current Bids</div>
+
+            <div class="bid-row">
+              <div class="bid-rank r1">1</div>
+              <div style="flex:1">
+                <div class="bid-addr">0x7F3a...b9C2</div>
+                <div class="bid-time">2 min ago · 0xa4f2...8b1c</div>
+              </div>
+              <div style="text-align:right">
+                <div class="bid-amount" style="color:var(--green)">$9,750</div>
+                <div><span class="badge badge-green">Leading</span></div>
+              </div>
+            </div>
+            <div class="bid-row">
+              <div class="bid-rank r2">2</div>
+              <div style="flex:1">
+                <div class="bid-addr">0x2D8b...f1A4</div>
+                <div class="bid-time">3 min ago · 0xc8d1...2f4a</div>
+              </div>
+              <div style="text-align:right">
+                <div class="bid-amount tm">$9,700</div>
+                <div><span class="badge badge-gray">Outbid · Refunded</span></div>
+              </div>
+            </div>
+            <div class="bid-row">
+              <div class="bid-rank r3">3</div>
+              <div style="flex:1">
+                <div class="bid-addr">0x9E1c...d4B8</div>
+                <div class="bid-time">4 min ago · 0xf2a9...1c3e</div>
+              </div>
+              <div style="text-align:right">
+                <div class="bid-amount tm">$9,500</div>
+                <div><span class="badge badge-gray">Outbid · Refunded</span></div>
+              </div>
+            </div>
+
+            <div class="success-box">
+              ✓ When auction closes, <strong>$9,750 USDC</strong> will be released to your wallet automatically.
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Invoice Summary</div></div>
+            <div class="card-bd">
+              <div class="preview" style="margin-top:0;">
+                <div class="prev-row"><span class="prev-lbl">Invoice ID</span>   <span class="prev-val ta">INV-2026-041</span></div>
+                <div class="prev-row"><span class="prev-lbl">Buyer</span>         <span class="prev-val">Acme Corp</span></div>
+                <div class="prev-row"><span class="prev-lbl">Face Value</span>    <span class="prev-val prev-val-green">$10,000 USDC</span></div>
+                <div class="prev-row"><span class="prev-lbl">Due Date</span>      <span class="prev-val">18 May 2026</span></div>
+                <div class="prev-row"><span class="prev-lbl">Days to Due</span>   <span class="prev-val">61 days</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Estimated Payout</div></div>
+            <div class="card-bd" style="text-align:center; padding:20px;">
+              <div style="font-size:11px; color:var(--muted); margin-bottom:8px;">YOU WILL RECEIVE</div>
+              <div style="font-size:32px; font-weight:600; color:var(--green);">$9,750</div>
+              <div style="font-size:11px; color:var(--muted); margin-top:6px;">97.5% recovery · at auction close</div>
+              <div style="background:var(--bg); border-radius:7px; padding:10px; margin-top:14px; font-size:12px; color:var(--muted);">
+                Cash in hand <strong style="color:var(--text)">today</strong> instead of waiting <strong style="color:var(--yellow)">61 days</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HISTORY TAB ── -->
+    <div id="v-history" style="display:none;">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Settled Invoices</div>
+          <span style="font-size:12px; color:var(--muted);">7 invoices · $261,505 total</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Invoice</th><th>Buyer</th><th>Face Value</th><th>Received</th><th>Recovery</th><th>Settled</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="mono ta">INV-2026-038</span></td><td>GlobalTrade SG</td>    <td class="tg">$18,500</td><td class="tg">$17,945</td><td>97.0%</td><td class="tm">01 Mar 2026</td></tr>
+            <tr><td><span class="mono ta">INV-2026-035</span></td><td>Harbour Partners</td>  <td class="tg">$42,000</td><td class="tg">$40,740</td><td>97.0%</td><td class="tm">14 Feb 2026</td></tr>
+            <tr><td><span class="mono ta">INV-2026-031</span></td><td>NexGen Systems</td>    <td class="tg">$15,000</td><td class="tg">$14,625</td><td>97.5%</td><td class="tm">28 Jan 2026</td></tr>
+            <tr><td><span class="mono ta">INV-2026-028</span></td><td>Pinnacle Corp</td>     <td class="tg">$22,000</td><td class="tg">$21,340</td><td>97.0%</td><td class="tm">12 Jan 2026</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function show(name) {
+    ['create', 'my-auction', 'history'].forEach(n => {
+      document.getElementById('v-' + n).style.display = n === name ? 'block' : 'none';
+      document.getElementById('tab-' + n).classList.toggle('active', n === name);
+    });
+  }
+
+  let s = 6 * 3600 + 14 * 60 + 32;
+  setInterval(() => {
+    if (s > 0) s--;
+    const pad = n => String(n).padStart(2, '0');
+    const el = document.getElementById('live-t');
+    if (el) el.textContent = `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+  }, 1000);
+
+  function submitInvoice(e) {
+    const btn = e.target;
+    btn.textContent = '⏳ Broadcasting...';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = '✓ Auction Started!';
+      btn.style.background = 'var(--green)';
+      setTimeout(() => show('my-auction'), 1500);
+    }, 2000);
+  }
+</script>
+</body>
+</html>

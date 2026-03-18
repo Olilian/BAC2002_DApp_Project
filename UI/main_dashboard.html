@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChainFactor — Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Dashboard-specific styles */
+    .stats       { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+    .stat-chg    { font-size: 11px; margin-top: 4px; color: var(--muted); }
+
+    .hrow        { margin-bottom: 12px; }
+    .hrow-top    { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+    .hbar        { height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+    .hfill       { height: 100%; border-radius: 3px; }
+
+    .metrics2    { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .mbox        { background: var(--bg); border-radius: 7px; padding: 11px; }
+    .mlbl        { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+    .mval        { font-size: 17px; font-weight: 600; }
+
+    .auc         { padding: 14px 0; border-bottom: 1px solid var(--bg); }
+    .auc:last-child { border-bottom: none; }
+    .auc-top     { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .auc-name    { font-weight: 600; font-size: 13px; }
+    .auc-id      { font-size: 11px; color: var(--muted); }
+    .auc-bid     { font-weight: 600; color: var(--accent); font-size: 14px; }
+    .auc-cnt     { font-size: 11px; color: var(--muted); }
+
+    .timer-wrap  { display: flex; gap: 5px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-name"><div class="logo-dot"></div> ChainFactor</div>
+      <div class="logo-sub">Invoice Factoring Protocol</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Main</div>
+      <a class="nav-item active"  href="main_dashboard.html"><span class="nav-icon">◈</span> Dashboard</a>
+      <a class="nav-item"         href="seller.html">        <span class="nav-icon">↑</span>  Seller Portal</a>
+      <a class="nav-item"         href="buyer.html">         <span class="nav-icon">⊕</span> Auction House</a>
+      <div class="nav-label">Finance</div>
+      <a class="nav-item" href="#"><span class="nav-icon">≡</span> My Invoices</a>
+      <a class="nav-item" href="#"><span class="nav-icon">◷</span> History</a>
+      <a class="nav-item" href="#"><span class="nav-icon">⬡</span> Contracts</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="wallet-box">
+        <div class="wallet-status"><div class="wdot"></div> MetaMask Connected</div>
+        <div class="wallet-addr">0x4A2B...3e9F · Sepolia</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ── -->
+  <main class="main">
+
+    <div class="net-bar">
+      <div class="ndot"></div>
+      <strong>Ethereum Sepolia Testnet</strong>
+      <span class="sep">·</span> Block #6,847,291
+      <span class="sep">·</span> Gas: 12 gwei
+    </div>
+
+    <div class="topbar">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Wednesday, 18 March 2026</div>
+      </div>
+      <a href="seller.html" class="btn btn-primary">+ New Invoice</a>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-lbl">Total Invoiced</div>
+        <div class="stat-val">$284,000</div>
+        <div class="stat-chg up">↑ 12.4% this month</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Cash Received</div>
+        <div class="stat-val" style="color:var(--green)">$261,505</div>
+        <div class="stat-chg up">91.9% recovery rate</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Active Auctions</div>
+        <div class="stat-val" style="color:var(--yellow)">3</div>
+        <div class="stat-chg">2 ending today</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Avg Discount Rate</div>
+        <div class="stat-val" style="color:var(--accent)">2.5%</div>
+        <div class="stat-chg down">↓ 0.3% vs last month</div>
+      </div>
+    </div>
+
+    <!-- Invoice Table + Live Auctions -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Recent Invoices</div>
+          <a href="seller.html" class="card-link">View all →</a>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Invoice</th><th>Buyer</th><th>Face Value</th><th>Received</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="mono ta">INV-041</span></td>
+              <td>Acme Corp</td>
+              <td class="tg">$10,000</td>
+              <td class="tg">$9,750</td>
+              <td><span class="badge badge-yellow">LIVE</span></td>
+            </tr>
+            <tr>
+              <td><span class="mono ta">INV-040</span></td>
+              <td>TechVentures</td>
+              <td class="tg">$25,000</td>
+              <td class="tg">$24,125</td>
+              <td><span class="badge badge-blue">PENDING</span></td>
+            </tr>
+            <tr>
+              <td><span class="mono ta">INV-038</span></td>
+              <td>GlobalTrade SG</td>
+              <td class="tg">$18,500</td>
+              <td class="tg">$17,945</td>
+              <td><span class="badge badge-green">SETTLED</span></td>
+            </tr>
+            <tr>
+              <td><span class="mono ta">INV-037</span></td>
+              <td>Meridian Logistics</td>
+              <td class="tg">$8,000</td>
+              <td class="tm">—</td>
+              <td><span class="badge badge-gray">DRAFT</span></td>
+            </tr>
+            <tr>
+              <td><span class="mono ta">INV-035</span></td>
+              <td>Harbour Partners</td>
+              <td class="tg">$42,000</td>
+              <td class="tg">$40,740</td>
+              <td><span class="badge badge-green">SETTLED</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Live Auctions</div>
+          <a href="buyer.html" class="card-link">View all →</a>
+        </div>
+        <div class="card-bd">
+          <div class="auc">
+            <div class="auc-top">
+              <div><div class="auc-name">INV-2026-041</div><div class="auc-id">Acme Corp · Net-60</div></div>
+              <div style="text-align:right"><div class="auc-bid">$9,750</div><div class="auc-cnt">3 bids</div></div>
+            </div>
+            <div class="bar"><div class="bar-fill" style="width:97.5%"></div></div>
+            <div class="bar-labels"><span>Min $9,000</span><span>Face $10,000</span></div>
+            <div class="timer-wrap">
+              <div class="tbox"><div class="tnum" id="a1h">06</div><div class="tlbl">hrs</div></div>
+              <div class="tbox"><div class="tnum" id="a1m">14</div><div class="tlbl">min</div></div>
+              <div class="tbox"><div class="tnum" id="a1s">32</div><div class="tlbl">sec</div></div>
+            </div>
+          </div>
+          <div class="auc">
+            <div class="auc-top">
+              <div><div class="auc-name">INV-2026-039</div><div class="auc-id">SkyTech · Net-30</div></div>
+              <div style="text-align:right"><div class="auc-bid">$7,200</div><div class="auc-cnt">1 bid</div></div>
+            </div>
+            <div class="bar"><div class="bar-fill" style="width:90%;background:var(--yellow)"></div></div>
+            <div class="bar-labels"><span>Min $7,000</span><span>Face $8,000</span></div>
+            <div class="timer-wrap">
+              <div class="tbox"><div class="tnum">19</div><div class="tlbl">hrs</div></div>
+              <div class="tbox"><div class="tnum">45</div><div class="tlbl">min</div></div>
+              <div class="tbox"><div class="tnum">08</div><div class="tlbl">sec</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portfolio Health + Activity Feed -->
+    <div class="grid-2b">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Portfolio Health</div></div>
+        <div class="card-bd">
+          <div class="hrow">
+            <div class="hrow-top"><span>Invoices Factored</span><span class="tg">7 / 9</span></div>
+            <div class="hbar"><div class="hfill" style="width:78%;background:var(--accent)"></div></div>
+          </div>
+          <div class="hrow">
+            <div class="hrow-top"><span>Recovery Rate</span><span class="ta">91.9%</span></div>
+            <div class="hbar"><div class="hfill" style="width:91.9%;background:var(--green)"></div></div>
+          </div>
+          <div class="hrow">
+            <div class="hrow-top"><span>Liquidity Utilization</span><span style="color:var(--yellow)">64%</span></div>
+            <div class="hbar"><div class="hfill" style="width:64%;background:var(--yellow)"></div></div>
+          </div>
+          <div class="metrics2">
+            <div class="mbox"><div class="mlbl">Days Saved</div><div class="mval tg">540</div></div>
+            <div class="mbox"><div class="mlbl">Avg Gas Fee</div><div class="mval ta">$0.42</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">On-chain Activity</div>
+          <span style="font-size:11px;color:var(--green);font-weight:600;">● Live</span>
+        </div>
+        <div class="card-bd">
+          <div class="act">
+            <div class="adot" style="background:var(--green)"></div>
+            <div><div class="atxt">LP3 placed winning bid of <strong>$9,750 USDC</strong> on INV-041</div><div class="atime">2 min ago · 0xa4f2...8b1c</div></div>
+          </div>
+          <div class="act">
+            <div class="adot" style="background:var(--yellow)"></div>
+            <div><div class="atxt">LP2 outbid — <strong>$9,700 USDC</strong> auto-refunded</div><div class="atime">3 min ago · 0xc8d1...2f4a</div></div>
+          </div>
+          <div class="act">
+            <div class="adot" style="background:var(--accent)"></div>
+            <div><div class="atxt">Auction started for INV-041 · Face value $10,000</div><div class="atime">6 hours ago · Block #6,847,101</div></div>
+          </div>
+          <div class="act">
+            <div class="adot" style="background:var(--green)"></div>
+            <div><div class="atxt">INV-038 settled — <strong>$18,500 USDC</strong> released</div><div class="atime">2 days ago · Block #6,830,482</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  let s = 6 * 3600 + 14 * 60 + 32;
+  setInterval(() => {
+    if (s > 0) s--;
+    const pad = n => String(n).padStart(2, '0');
+    document.getElementById('a1h').textContent = pad(Math.floor(s / 3600));
+    document.getElementById('a1m').textContent = pad(Math.floor((s % 3600) / 60));
+    document.getElementById('a1s').textContent = pad(s % 60);
+  }, 1000);
+</script>
+</body>
+</html>

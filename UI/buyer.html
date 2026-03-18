@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChainFactor — Auction House</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Buyer-specific styles */
+    .stats        { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+
+    /* Auction cards */
+    .acard        { background: var(--white); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; cursor: pointer; transition: all 0.15s; }
+    .acard:hover  { border-color: var(--accent); box-shadow: 0 4px 20px rgba(37,99,235,0.08); transform: translateY(-1px); }
+    .acard-top    { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
+    .acard-name   { font-weight: 600; font-size: 14px; }
+    .acard-id     { font-family: 'DM Mono', monospace; font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+    .acard-body   { padding: 14px 16px; }
+    .acard-metrics{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .am           { text-align: center; background: var(--bg); border-radius: 6px; padding: 8px; }
+    .am-lbl       { font-size: 9px; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 3px; }
+    .am-val       { font-size: 14px; font-weight: 600; }
+    .acard-footer { display: flex; gap: 8px; }
+    .btn-bid      { flex: 1; padding: 9px; border-radius: 7px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: var(--accent); color: #fff; transition: all 0.15s; }
+    .btn-bid:hover{ background: #1d4ed8; }
+    .btn-det      { padding: 9px 14px; border-radius: 7px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); transition: all 0.15s; }
+    .btn-det:hover{ border-color: #aaa; color: var(--text); }
+
+    /* Bidding view */
+    .back-btn     { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; margin-bottom: 18px; border: none; background: none; font-family: 'DM Sans', sans-serif; padding: 0; transition: color 0.15s; }
+    .back-btn:hover{ color: var(--accent); }
+    .bid-layout   { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
+
+    .inv-hero     { background: var(--bg); border-radius: 8px; padding: 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .inv-hero-name{ font-size: 16px; font-weight: 600; margin-bottom: 3px; }
+    .inv-hero-sub { font-size: 12px; color: var(--muted); }
+    .inv-hero-val { font-size: 24px; font-weight: 600; color: var(--green); }
+    .inv-hero-lbl { font-size: 10px; color: var(--muted); }
+
+    .bid-timer    { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; }
+    .bt-unit      { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 10px 14px; text-align: center; min-width: 60px; }
+    .bt-num       { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500; color: var(--accent); }
+    .bt-lbl       { font-size: 9px; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+
+    .detail-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .detail-box   { background: var(--bg); border-radius: 7px; padding: 10px 12px; }
+    .detail-lbl   { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+    .detail-val   { font-size: 14px; font-weight: 600; }
+
+    .bhist-row    { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--bg); }
+    .bhist-row:last-child { border-bottom: none; }
+    .brank        { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0; }
+    .br1          { background: var(--green-light);  color: var(--green);  }
+    .br2          { background: var(--accent-light); color: var(--accent); }
+    .br3          { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+    .bh-addr      { font-family: 'DM Mono', monospace; font-size: 11px; }
+    .bh-time      { font-size: 10px; color: var(--muted); }
+    .bh-amount    { font-weight: 600; font-size: 13px; }
+
+    .quick-bids   { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .qbid         { padding: 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; cursor: pointer; text-align: center; transition: all 0.15s; }
+    .qbid:hover, .qbid.sel { background: var(--accent-light); border-color: #bfdbfe; }
+    .qbid-amt     { font-size: 13px; font-weight: 600; color: var(--accent); }
+    .qbid-rate    { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+    .calc-box     { background: var(--bg); border-radius: 8px; padding: 12px 14px; margin-top: 12px; }
+    .calc-row     { display: flex; justify-content: space-between; font-size: 12.5px; padding: 4px 0; color: var(--muted); }
+    .calc-divider { height: 1px; background: var(--border); margin: 8px 0; }
+    .calc-total   { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
+
+    .my-pos-box   { background: var(--accent-light); border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 12px; color: #1e40af; }
+    .escrow-note  { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; line-height: 1.5; }
+
+    .how-flow     { display: flex; flex-direction: column; gap: 10px; }
+    .hf-item      { display: flex; gap: 10px; }
+    .hf-num       { width: 20px; height: 20px; border-radius: 50%; background: var(--accent-light); color: var(--accent); font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .hf-text      { font-size: 12.5px; color: var(--muted); }
+    .hf-text strong{ color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-name"><div class="logo-dot"></div> ChainFactor</div>
+      <div class="logo-sub">Invoice Factoring Protocol</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Main</div>
+      <a class="nav-item"        href="main_dashboard.html"><span class="nav-icon">◈</span> Dashboard</a>
+      <a class="nav-item"        href="seller.html">        <span class="nav-icon">↑</span>  Seller Portal</a>
+      <a class="nav-item active" href="buyer.html">         <span class="nav-icon">⊕</span> Auction House</a>
+      <div class="nav-label">My Positions</div>
+      <a class="nav-item" href="#"><span class="nav-icon">≡</span> Active Bids</a>
+      <a class="nav-item" href="#"><span class="nav-icon">◷</span> Earnings</a>
+      <a class="nav-item" href="#"><span class="nav-icon">⬡</span> Contracts</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="wallet-box">
+        <div class="wallet-status"><div class="wdot"></div> MetaMask Connected</div>
+        <div class="wallet-addr">0x7F3a...b9C2 · Sepolia</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ── -->
+  <main class="main">
+
+    <!-- ── LIST VIEW ── -->
+    <div id="view-list">
+
+      <div class="net-bar">
+        <div class="ndot"></div>
+        <strong>Ethereum Sepolia Testnet</strong>
+        <span class="sep">·</span> Escrow: 0x9dA1...b3C4
+        <span class="sep">·</span> USDC Balance: $45,000
+      </div>
+
+      <div class="topbar">
+        <div>
+          <div class="page-title">Auction House</div>
+          <div class="page-sub">Bid on invoices · Earn the discount as yield</div>
+        </div>
+        <div style="font-size:12px; color:var(--green); font-weight:600;">● 3 live auctions</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="stat-lbl">USDC Balance</div>  <div class="stat-val" style="color:var(--green)">$45,000</div></div>
+        <div class="stat"><div class="stat-lbl">In Escrow (Bids)</div><div class="stat-val" style="color:var(--yellow)">$9,750</div></div>
+        <div class="stat"><div class="stat-lbl">Invoices Won</div>  <div class="stat-val" style="color:var(--accent)">4</div></div>
+        <div class="stat"><div class="stat-lbl">Yield Earned</div>  <div class="stat-val" style="color:var(--green)">$2,815</div></div>
+      </div>
+
+      <div class="filter-bar">
+        <button class="fbtn active">All Live</button>
+        <button class="fbtn">Ending Soon</button>
+        <button class="fbtn">High Value</button>
+        <button class="fbtn">My Bids</button>
+        <input class="fsearch" placeholder="Search invoice or company...">
+      </div>
+
+      <div class="auction-grid">
+
+        <!-- Auction Card 1 -->
+        <div class="acard" onclick="openBid(1)">
+          <div class="acard-top">
+            <div>
+              <div class="acard-name">Acme Corp</div>
+              <div class="acard-id">INV-2026-041 · Software Dev · Net-60</div>
+            </div>
+            <span class="badge badge-yellow">Ending Soon</span>
+          </div>
+          <div class="acard-body">
+            <div class="acard-metrics">
+              <div class="am"><div class="am-lbl">Face Value</div><div class="am-val" style="color:var(--green)">$10,000</div></div>
+              <div class="am"><div class="am-lbl">Top Bid</div>   <div class="am-val" style="color:var(--accent)">$9,750</div></div>
+              <div class="am"><div class="am-lbl">Yield</div>     <div class="am-val" style="color:var(--yellow)">2.5%</div></div>
+            </div>
+            <div class="bar"><div class="bar-fill" style="width:97.5%"></div></div>
+            <div class="bar-labels"><span>Min $9,000</span><span>3 bids</span><span>Face $10,000</span></div>
+            <div class="timer" style="margin-top:10px;">
+              <div class="tbox"><div class="tnum" id="c1h">06</div><div class="tlbl">hrs</div></div>
+              <div class="tbox"><div class="tnum" id="c1m">14</div><div class="tlbl">min</div></div>
+              <div class="tbox"><div class="tnum" id="c1s">32</div><div class="tlbl">sec</div></div>
+            </div>
+            <div style="font-size:11px; color:var(--yellow); margin:8px 0; font-weight:500;">★ You are currently leading</div>
+            <div class="acard-footer">
+              <button class="btn-bid" onclick="event.stopPropagation(); openBid(1)">Update Bid</button>
+              <button class="btn-det" onclick="event.stopPropagation()">Details</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auction Card 2 -->
+        <div class="acard" onclick="openBid(2)">
+          <div class="acard-top">
+            <div>
+              <div class="acard-name">SkyTech Pte Ltd</div>
+              <div class="acard-id">INV-2026-039 · Cloud Services · Net-30</div>
+            </div>
+            <span class="badge badge-green">Live</span>
+          </div>
+          <div class="acard-body">
+            <div class="acard-metrics">
+              <div class="am"><div class="am-lbl">Face Value</div><div class="am-val" style="color:var(--green)">$8,000</div></div>
+              <div class="am"><div class="am-lbl">Top Bid</div>   <div class="am-val" style="color:var(--accent)">$7,200</div></div>
+              <div class="am"><div class="am-lbl">Yield</div>     <div class="am-val" style="color:var(--green)">10.0%</div></div>
+            </div>
+            <div class="bar"><div class="bar-fill" style="width:90%; background:var(--yellow)"></div></div>
+            <div class="bar-labels"><span>Min $7,000</span><span>1 bid</span><span>Face $8,000</span></div>
+            <div class="timer" style="margin-top:10px; margin-bottom:30px;">
+              <div class="tbox"><div class="tnum">19</div><div class="tlbl">hrs</div></div>
+              <div class="tbox"><div class="tnum">45</div><div class="tlbl">min</div></div>
+              <div class="tbox"><div class="tnum">08</div><div class="tlbl">sec</div></div>
+            </div>
+            <div class="acard-footer">
+              <button class="btn-bid" onclick="event.stopPropagation(); openBid(2)">Place Bid</button>
+              <button class="btn-det" onclick="event.stopPropagation()">Details</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auction Card 3 -->
+        <div class="acard" onclick="openBid(3)">
+          <div class="acard-top">
+            <div>
+              <div class="acard-name">Meridian Logistics</div>
+              <div class="acard-id">INV-2026-042 · Freight · Net-90</div>
+            </div>
+            <span class="badge badge-green">Live</span>
+          </div>
+          <div class="acard-body">
+            <div class="acard-metrics">
+              <div class="am"><div class="am-lbl">Face Value</div><div class="am-val" style="color:var(--green)">$32,000</div></div>
+              <div class="am"><div class="am-lbl">Top Bid</div>   <div class="am-val" style="color:var(--muted)">—</div></div>
+              <div class="am"><div class="am-lbl">Min Yield</div> <div class="am-val" style="color:var(--green)">5.0%</div></div>
+            </div>
+            <div class="bar"><div class="bar-fill" style="width:0%"></div></div>
+            <div class="bar-labels"><span>Min $30,400</span><span>0 bids</span><span>Face $32,000</span></div>
+            <div class="timer" style="margin-top:10px; margin-bottom:30px;">
+              <div class="tbox"><div class="tnum">23</div><div class="tlbl">hrs</div></div>
+              <div class="tbox"><div class="tnum">59</div><div class="tlbl">min</div></div>
+              <div class="tbox"><div class="tnum">41</div><div class="tlbl">sec</div></div>
+            </div>
+            <div class="acard-footer">
+              <button class="btn-bid" onclick="event.stopPropagation(); openBid(3)">Place First Bid</button>
+              <button class="btn-det" onclick="event.stopPropagation()">Details</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- end #view-list -->
+
+    <!-- ── BID VIEW ── -->
+    <div id="view-bid" style="display:none;">
+
+      <button class="back-btn" onclick="closeBid()">← Back to Auction House</button>
+
+      <div class="bid-layout">
+
+        <!-- Left: Invoice details + bid history -->
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div class="card">
+            <div class="card-hd">
+              <div class="card-title" id="bid-title">INV-2026-041 · Acme Corp</div>
+              <span class="badge badge-yellow">Ending Soon</span>
+            </div>
+            <div class="card-bd">
+
+              <div class="inv-hero">
+                <div>
+                  <div class="inv-hero-name" id="bid-company">Acme Corp</div>
+                  <div class="inv-hero-sub"  id="bid-desc">Software Development Services · Net-60</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="inv-hero-lbl">Leading Bid</div>
+                  <div class="inv-hero-val" id="bid-top-val">$9,750</div>
+                </div>
+              </div>
+
+              <div class="bid-timer">
+                <div class="bt-unit"><div class="bt-num" id="bt-h">06</div><div class="bt-lbl">Hours</div></div>
+                <div style="font-size:22px; color:var(--muted); align-self:center;">:</div>
+                <div class="bt-unit"><div class="bt-num" id="bt-m">14</div><div class="bt-lbl">Minutes</div></div>
+                <div style="font-size:22px; color:var(--muted); align-self:center;">:</div>
+                <div class="bt-unit"><div class="bt-num" id="bt-s">32</div><div class="bt-lbl">Seconds</div></div>
+              </div>
+
+              <div class="detail-grid">
+                <div class="detail-box"><div class="detail-lbl">Face Value</div><div class="detail-val" style="color:var(--green)" id="bid-fv">$10,000</div></div>
+                <div class="detail-box"><div class="detail-lbl">Debtor</div>     <div class="detail-val" id="bid-debtor">Acme Corp</div></div>
+                <div class="detail-box"><div class="detail-lbl">Due Date</div>   <div class="detail-val" id="bid-due">18 May 2026</div></div>
+                <div class="detail-box"><div class="detail-lbl">Term</div>       <div class="detail-val" id="bid-term">Net-60</div></div>
+              </div>
+
+              <div style="font-size:13px; font-weight:600; margin-bottom:10px;">Bid History</div>
+              <div class="bhist-row">
+                <div class="brank br1">1</div>
+                <div style="flex:1"><div class="bh-addr">0x7F3a...b9C2 (You)</div><div class="bh-time">2 min ago · 0xa4f2...8b1c</div></div>
+                <div style="text-align:right"><div class="bh-amount" style="color:var(--green)">$9,750</div><div><span class="badge badge-green">Leading</span></div></div>
+              </div>
+              <div class="bhist-row">
+                <div class="brank br2">2</div>
+                <div style="flex:1"><div class="bh-addr">0x2D8b...f1A4</div><div class="bh-time">3 min ago · 0xc8d1...2f4a</div></div>
+                <div style="text-align:right"><div class="bh-amount tm">$9,700</div><div><span class="badge badge-gray">Outbid · Refunded</span></div></div>
+              </div>
+              <div class="bhist-row">
+                <div class="brank br3">3</div>
+                <div style="flex:1"><div class="bh-addr">0x9E1c...d4B8</div><div class="bh-time">4 min ago · 0xf2a9...1c3e</div></div>
+                <div style="text-align:right"><div class="bh-amount tm">$9,500</div><div><span class="badge badge-gray">Outbid · Refunded</span></div></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Bid entry -->
+        <div style="display:flex; flex-direction:column; gap:14px;">
+
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Your Position</div></div>
+            <div class="card-bd">
+              <div class="my-pos-box">
+                You are <strong>leading</strong> at $9,750. Your USDC is in escrow and will be auto-refunded if outbid.
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <div style="background:var(--bg); border-radius:7px; padding:10px; text-align:center;">
+                  <div style="font-size:10px; color:var(--muted); margin-bottom:4px;">Available</div>
+                  <div style="font-size:16px; font-weight:600; color:var(--green)">$35,250</div>
+                </div>
+                <div style="background:var(--bg); border-radius:7px; padding:10px; text-align:center;">
+                  <div style="font-size:10px; color:var(--muted); margin-bottom:4px;">In Escrow</div>
+                  <div style="font-size:16px; font-weight:600; color:var(--yellow)">$9,750</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Place / Update Bid</div></div>
+            <div class="card-bd">
+              <div class="quick-bids">
+                <div class="qbid"     onclick="selectBid(this, 9800)"><div class="qbid-amt">$9,800</div><div class="qbid-rate">98% · 2.0% yield</div></div>
+                <div class="qbid sel" onclick="selectBid(this, 9850)"><div class="qbid-amt">$9,850</div><div class="qbid-rate">98.5% · 1.5% yield</div></div>
+                <div class="qbid"     onclick="selectBid(this, 9900)"><div class="qbid-amt">$9,900</div><div class="qbid-rate">99% · 1.0% yield</div></div>
+              </div>
+
+              <label>Custom Amount (USDC)</label>
+              <input type="number" id="bid-input" value="9850" min="9751" oninput="updateCalc()">
+
+              <div class="calc-box">
+                <div class="calc-row"><span>You pay</span>                  <span id="calc-pay"  style="color:var(--text); font-weight:500">$9,850</span></div>
+                <div class="calc-row"><span>You collect at maturity</span>  <span id="calc-face" style="color:var(--text); font-weight:500">$10,000</span></div>
+                <div class="calc-divider"></div>
+                <div class="calc-total"><span>Yield earned</span>           <span id="calc-yield" style="color:var(--green)">+$150 (1.52%)</span></div>
+              </div>
+
+              <div style="font-size:11px; color:var(--muted); margin:12px 0 8px; line-height:1.6;">
+                Your USDC is locked in the <strong style="color:var(--text)">Escrow Manager</strong> smart contract.
+                If outbid, it is <strong style="color:var(--green)">automatically returned</strong> to your wallet.
+              </div>
+
+              <button class="btn-submit" id="submit-btn" onclick="submitBid()">Submit Bid via MetaMask</button>
+              <div class="escrow-note">Contract: 0x9dA1...b3C4 · Verified on Etherscan</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-hd"><div class="card-title">How Bidding Works</div></div>
+            <div class="card-bd">
+              <div class="how-flow">
+                <div class="hf-item"><div class="hf-num">1</div><div class="hf-text"><strong>Bid USDC</strong> — locked in escrow immediately</div></div>
+                <div class="hf-item"><div class="hf-num">2</div><div class="hf-text"><strong>Outbid?</strong> — refund is automatic, no action needed</div></div>
+                <div class="hf-item"><div class="hf-num">3</div><div class="hf-text"><strong>Win auction</strong> — you own the invoice rights</div></div>
+                <div class="hf-item"><div class="hf-num">4</div><div class="hf-text"><strong>At maturity</strong> — buyer pays full amount, you collect profit</div></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- end #view-bid -->
+
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <div class="toast-title" id="toast-title">Bid Confirmed!</div>
+  <div class="toast-msg"   id="toast-msg">Your bid is now secured in escrow.</div>
+</div>
+
+<script>
+  const auctionData = {
+    1: { company:'Acme Corp',          desc:'Software Development Services · Net-60', fv:'$10,000', debtor:'Acme Corp',          due:'18 May 2026', term:'Net-60', top:'$9,750',  min: 9751  },
+    2: { company:'SkyTech Pte Ltd',    desc:'Cloud Infrastructure Services · Net-30', fv:'$8,000',  debtor:'SkyTech Pte Ltd',    due:'18 Apr 2026', term:'Net-30', top:'$7,200',  min: 7201  },
+    3: { company:'Meridian Logistics', desc:'Freight & Shipping Services · Net-90',   fv:'$32,000', debtor:'Meridian Logistics', due:'18 Jun 2026', term:'Net-90', top:'—',        min: 30400 },
+  };
+
+  function openBid(id) {
+    const d = auctionData[id];
+    document.getElementById('view-list').style.display = 'none';
+    document.getElementById('view-bid').style.display  = 'block';
+    document.getElementById('bid-title').textContent    = `INV-2026-0${38 + id} · ${d.company}`;
+    document.getElementById('bid-company').textContent  = d.company;
+    document.getElementById('bid-desc').textContent     = d.desc;
+    document.getElementById('bid-fv').textContent       = d.fv;
+    document.getElementById('bid-debtor').textContent   = d.debtor;
+    document.getElementById('bid-due').textContent      = d.due;
+    document.getElementById('bid-term').textContent     = d.term;
+    document.getElementById('bid-top-val').textContent  = d.top;
+    document.getElementById('bid-input').min            = d.min;
+    document.getElementById('bid-input').value          = d.min;
+    updateCalc();
+    window.scrollTo(0, 0);
+  }
+
+  function closeBid() {
+    document.getElementById('view-list').style.display = 'block';
+    document.getElementById('view-bid').style.display  = 'none';
+  }
+
+  function selectBid(el, amt) {
+    document.querySelectorAll('.qbid').forEach(b => b.classList.remove('sel'));
+    el.classList.add('sel');
+    document.getElementById('bid-input').value = amt;
+    updateCalc();
+  }
+
+  function updateCalc() {
+    const bid   = parseFloat(document.getElementById('bid-input').value) || 0;
+    const face  = 10000;
+    const yield_ = face - bid;
+    const pct   = ((yield_ / bid) * 100).toFixed(2);
+    document.getElementById('calc-pay').textContent   = '$' + bid.toLocaleString();
+    document.getElementById('calc-yield').textContent = `+$${yield_.toFixed(0)} (${pct}%)`;
+  }
+
+  function submitBid() {
+    const btn = document.getElementById('submit-btn');
+    const amt = document.getElementById('bid-input').value;
+    btn.textContent = '⏳ Awaiting MetaMask...';
+    btn.disabled    = true;
+    setTimeout(() => {
+      btn.textContent      = '✓ Bid Confirmed!';
+      btn.style.background = 'var(--green)';
+      showToast('Bid Confirmed!', `$${parseFloat(amt).toLocaleString()} USDC is secured in escrow.`);
+    }, 2000);
+  }
+
+  function showToast(title, msg) {
+    document.getElementById('toast-title').textContent = title;
+    document.getElementById('toast-msg').textContent   = msg;
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+  // Shared countdown (synced across list & bid view)
+  let s = 6 * 3600 + 14 * 60 + 32;
+  setInterval(() => {
+    if (s > 0) s--;
+    const pad = n => String(n).padStart(2, '0');
+    const h = pad(Math.floor(s / 3600));
+    const m = pad(Math.floor((s % 3600) / 60));
+    const sec = pad(s % 60);
+    ['c1h','bt-h'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = h;   });
+    ['c1m','bt-m'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = m;   });
+    ['c1s','bt-s'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = sec; });
+  }, 1000);
+
+  // Filter buttons
+  document.querySelectorAll('.fbtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
