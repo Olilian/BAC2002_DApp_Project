@@ -1,23 +1,35 @@
 {
   "name": "bac2002_dapp_project",
   "version": "1.0.0",
-  "description": "",
+  "description": "ChainFactor - Decentralized Invoice Factoring Marketplace",
   "main": "index.js",
   "scripts": {
-    "start": "live-server UI --entry-file=main_dashboard.html"
+    "start": "live-server UI --entry-file=main_dashboard.html",
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "deploy:localhost": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "node": "hardhat node",
+    "clean": "hardhat clean"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Olilian/BAC2002_DApp_Project.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["blockchain", "invoice", "factoring", "defi", "ethereum"],
+  "author": "Your Team Name",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/Olilian/BAC2002_DApp_Project/issues"
   },
   "homepage": "https://github.com/Olilian/BAC2002_DApp_Project#readme",
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.19.0",
     "live-server": "^1.2.2"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.0",
+    "dotenv": "^16.3.1"
   }
 }

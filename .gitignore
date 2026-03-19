@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables (NEVER commit private keys!)
+.env
+.env.local
+.env.*.local
+
+# Hardhat files
+artifacts/
+cache/
+typechain-types/
+
+# Coverage reports
+coverage/
+coverage.json
+
+# Deployed contract addresses (optional - you might want to commit this)
+deployed-addresses.json
+
+# Build files
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+*.log
+
+# Test files
+*.test.js.snap
+
+# Hardhat network files
+deployments/
+
+# Misc
+*.tgz
+*.gz
