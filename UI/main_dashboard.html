@@ -1,257 +1,693 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ChainFactor — Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    /* Dashboard-specific styles */
-    .stats       { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-    .stat-chg    { font-size: 11px; margin-top: 4px; color: var(--muted); }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChainFactor — Dashboard</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
 
-    .hrow        { margin-bottom: 12px; }
-    .hrow-top    { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
-    .hbar        { height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; }
-    .hfill       { height: 100%; border-radius: 3px; }
+    <!-- ========== WEB3 INTEGRATION ========== -->
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <script src="contracts-config.js"></script>
+    <script src="web3-utils.js"></script>
+    <!-- ======================================= -->
 
-    .metrics2    { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
-    .mbox        { background: var(--bg); border-radius: 7px; padding: 11px; }
-    .mlbl        { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
-    .mval        { font-size: 17px; font-weight: 600; }
+    <style>
+      /* Dashboard-specific styles */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .stat-chg {
+        font-size: 11px;
+        margin-top: 4px;
+        color: var(--muted);
+      }
 
-    .auc         { padding: 14px 0; border-bottom: 1px solid var(--bg); }
-    .auc:last-child { border-bottom: none; }
-    .auc-top     { display: flex; justify-content: space-between; margin-bottom: 8px; }
-    .auc-name    { font-weight: 600; font-size: 13px; }
-    .auc-id      { font-size: 11px; color: var(--muted); }
-    .auc-bid     { font-weight: 600; color: var(--accent); font-size: 14px; }
-    .auc-cnt     { font-size: 11px; color: var(--muted); }
+      .hrow {
+        margin-bottom: 12px;
+      }
+      .hrow-top {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin-bottom: 5px;
+      }
+      .hbar {
+        height: 5px;
+        background: var(--bg);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .hfill {
+        height: 100%;
+        border-radius: 3px;
+      }
 
-    .timer-wrap  { display: flex; gap: 5px; margin-top: 8px; }
-  </style>
-</head>
-<body>
-<div class="layout">
+      .metrics2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .mbox {
+        background: var(--bg);
+        border-radius: 7px;
+        padding: 11px;
+      }
+      .mlbl {
+        font-size: 10px;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .mval {
+        font-size: 17px;
+        font-weight: 600;
+      }
 
-  <!-- ── Sidebar ── -->
-  <aside class="sidebar">
-    <div class="logo">
-      <div class="logo-name"><div class="logo-dot"></div> ChainFactor</div>
-      <div class="logo-sub">Invoice Factoring Protocol</div>
-    </div>
-    <nav class="nav">
-      <div class="nav-label">Main</div>
-      <a class="nav-item active"  href="main_dashboard.html"><span class="nav-icon">◈</span> Dashboard</a>
-      <a class="nav-item"         href="seller.html">        <span class="nav-icon">↑</span>  Seller Portal</a>
-      <a class="nav-item"         href="buyer.html">         <span class="nav-icon">⊕</span> Auction House</a>
-      <div class="nav-label">Finance</div>
-      <a class="nav-item" href="#"><span class="nav-icon">≡</span> My Invoices</a>
-      <a class="nav-item" href="#"><span class="nav-icon">◷</span> History</a>
-      <a class="nav-item" href="#"><span class="nav-icon">⬡</span> Contracts</a>
-    </nav>
-    <div class="sidebar-footer">
-      <div class="wallet-box">
-        <div class="wallet-status"><div class="wdot"></div> MetaMask Connected</div>
-        <div class="wallet-addr">0x4A2B...3e9F · Sepolia</div>
-      </div>
-    </div>
-  </aside>
+      .auc {
+        padding: 14px 0;
+        border-bottom: 1px solid var(--bg);
+      }
+      .auc:last-child {
+        border-bottom: none;
+      }
+      .auc-top {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .auc-name {
+        font-weight: 600;
+        font-size: 13px;
+      }
+      .auc-id {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .auc-bid {
+        font-weight: 600;
+        color: var(--accent);
+        font-size: 14px;
+      }
+      .auc-cnt {
+        font-size: 11px;
+        color: var(--muted);
+      }
 
-  <!-- ── Main Content ── -->
-  <main class="main">
-
-    <div class="net-bar">
-      <div class="ndot"></div>
-      <strong>Ethereum Sepolia Testnet</strong>
-      <span class="sep">·</span> Block #6,847,291
-      <span class="sep">·</span> Gas: 12 gwei
-    </div>
-
-    <div class="topbar">
-      <div>
-        <div class="page-title">Dashboard</div>
-        <div class="page-sub">Wednesday, 18 March 2026</div>
-      </div>
-      <a href="seller.html" class="btn btn-primary">+ New Invoice</a>
-    </div>
-
-    <!-- Stat Cards -->
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-lbl">Total Invoiced</div>
-        <div class="stat-val">$284,000</div>
-        <div class="stat-chg up">↑ 12.4% this month</div>
-      </div>
-      <div class="stat">
-        <div class="stat-lbl">Cash Received</div>
-        <div class="stat-val" style="color:var(--green)">$261,505</div>
-        <div class="stat-chg up">91.9% recovery rate</div>
-      </div>
-      <div class="stat">
-        <div class="stat-lbl">Active Auctions</div>
-        <div class="stat-val" style="color:var(--yellow)">3</div>
-        <div class="stat-chg">2 ending today</div>
-      </div>
-      <div class="stat">
-        <div class="stat-lbl">Avg Discount Rate</div>
-        <div class="stat-val" style="color:var(--accent)">2.5%</div>
-        <div class="stat-chg down">↓ 0.3% vs last month</div>
-      </div>
-    </div>
-
-    <!-- Invoice Table + Live Auctions -->
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Recent Invoices</div>
-          <a href="seller.html" class="card-link">View all →</a>
+      .timer-wrap {
+        display: flex;
+        gap: 5px;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <!-- ── Sidebar ── -->
+      <aside class="sidebar">
+        <div class="logo">
+          <div class="logo-name">
+            <div class="logo-dot"></div>
+            ChainFactor
+          </div>
+          <div class="logo-sub">Invoice Factoring Protocol</div>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Invoice</th><th>Buyer</th><th>Face Value</th><th>Received</th><th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span class="mono ta">INV-041</span></td>
-              <td>Acme Corp</td>
-              <td class="tg">$10,000</td>
-              <td class="tg">$9,750</td>
-              <td><span class="badge badge-yellow">LIVE</span></td>
-            </tr>
-            <tr>
-              <td><span class="mono ta">INV-040</span></td>
-              <td>TechVentures</td>
-              <td class="tg">$25,000</td>
-              <td class="tg">$24,125</td>
-              <td><span class="badge badge-blue">PENDING</span></td>
-            </tr>
-            <tr>
-              <td><span class="mono ta">INV-038</span></td>
-              <td>GlobalTrade SG</td>
-              <td class="tg">$18,500</td>
-              <td class="tg">$17,945</td>
-              <td><span class="badge badge-green">SETTLED</span></td>
-            </tr>
-            <tr>
-              <td><span class="mono ta">INV-037</span></td>
-              <td>Meridian Logistics</td>
-              <td class="tg">$8,000</td>
-              <td class="tm">—</td>
-              <td><span class="badge badge-gray">DRAFT</span></td>
-            </tr>
-            <tr>
-              <td><span class="mono ta">INV-035</span></td>
-              <td>Harbour Partners</td>
-              <td class="tg">$42,000</td>
-              <td class="tg">$40,740</td>
-              <td><span class="badge badge-green">SETTLED</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <nav class="nav">
+          <div class="nav-label">Main</div>
+          <a class="nav-item active" href="main_dashboard.html"
+            ><span class="nav-icon">◈</span> Dashboard</a
+          >
+          <a class="nav-item" href="seller.html">
+            <span class="nav-icon">↑</span> Seller Portal</a
+          >
+          <a class="nav-item" href="buyer.html">
+            <span class="nav-icon">⊕</span> Auction House</a
+          >
+          <div class="nav-label">Finance</div>
+          <a class="nav-item" href="#"
+            ><span class="nav-icon">≡</span> My Invoices</a
+          >
+          <a class="nav-item" href="#"
+            ><span class="nav-icon">◷</span> History</a
+          >
+          <a class="nav-item" href="#"
+            ><span class="nav-icon">⬡</span> Contracts</a
+          >
+        </nav>
 
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">Live Auctions</div>
-          <a href="buyer.html" class="card-link">View all →</a>
+        <!-- ========== WEB3: WALLET BOX ========== -->
+        <div class="sidebar-footer">
+          <div class="wallet-box" id="walletBox">
+            <button
+              class="btn btn-primary"
+              onclick="connectMetaMask()"
+              id="connectBtn"
+              style="width: 100%"
+            >
+              Connect MetaMask
+            </button>
+          </div>
         </div>
-        <div class="card-bd">
-          <div class="auc">
-            <div class="auc-top">
-              <div><div class="auc-name">INV-2026-041</div><div class="auc-id">Acme Corp · Net-60</div></div>
-              <div style="text-align:right"><div class="auc-bid">$9,750</div><div class="auc-cnt">3 bids</div></div>
+        <!-- ======================================= -->
+      </aside>
+
+      <!-- ── Main Content ── -->
+      <main class="main">
+        <div class="net-bar">
+          <div class="ndot"></div>
+          <strong>Ethereum Sepolia Testnet</strong>
+          <span class="sep">·</span> <span id="networkInfo">Not connected</span>
+        </div>
+
+        <div class="topbar">
+          <div>
+            <div class="page-title">Dashboard</div>
+            <div class="page-sub" id="currentDate">Loading...</div>
+          </div>
+          <a href="seller.html" class="btn btn-primary">+ New Invoice</a>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-lbl">USDC Balance</div>
+            <div class="stat-val" id="usdcBalance">--</div>
+            <div class="stat-chg" id="usdcChange">Wallet balance</div>
+          </div>
+          <div class="stat">
+            <div class="stat-lbl">My Invoices</div>
+            <div class="stat-val" style="color: var(--green)" id="invoiceCount">
+              --
             </div>
-            <div class="bar"><div class="bar-fill" style="width:97.5%"></div></div>
-            <div class="bar-labels"><span>Min $9,000</span><span>Face $10,000</span></div>
-            <div class="timer-wrap">
-              <div class="tbox"><div class="tnum" id="a1h">06</div><div class="tlbl">hrs</div></div>
-              <div class="tbox"><div class="tnum" id="a1m">14</div><div class="tlbl">min</div></div>
-              <div class="tbox"><div class="tnum" id="a1s">32</div><div class="tlbl">sec</div></div>
-            </div>
+            <div class="stat-chg" id="invoiceChange">Total created</div>
           </div>
-          <div class="auc">
-            <div class="auc-top">
-              <div><div class="auc-name">INV-2026-039</div><div class="auc-id">SkyTech · Net-30</div></div>
-              <div style="text-align:right"><div class="auc-bid">$7,200</div><div class="auc-cnt">1 bid</div></div>
+          <div class="stat">
+            <div class="stat-lbl">Active Auctions</div>
+            <div
+              class="stat-val"
+              style="color: var(--yellow)"
+              id="activeAuctionsCount"
+            >
+              --
             </div>
-            <div class="bar"><div class="bar-fill" style="width:90%;background:var(--yellow)"></div></div>
-            <div class="bar-labels"><span>Min $7,000</span><span>Face $8,000</span></div>
-            <div class="timer-wrap">
-              <div class="tbox"><div class="tnum">19</div><div class="tlbl">hrs</div></div>
-              <div class="tbox"><div class="tnum">45</div><div class="tlbl">min</div></div>
-              <div class="tbox"><div class="tnum">08</div><div class="tlbl">sec</div></div>
+            <div class="stat-chg" id="auctionsChange">Live on platform</div>
+          </div>
+          <div class="stat">
+            <div class="stat-lbl">Total Platform Volume</div>
+            <div class="stat-val" style="color: var(--accent)" id="totalVolume">
+              --
+            </div>
+            <div class="stat-chg" id="volumeChange">All invoices</div>
+          </div>
+        </div>
+
+        <!-- Invoice Table + Live Auctions -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-hd">
+              <div class="card-title">My Invoices</div>
+              <a href="seller.html" class="card-link">Create new →</a>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Invoice ID</th>
+                  <th>Buyer</th>
+                  <th>Face Value</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="myInvoicesTable">
+                <tr>
+                  <td
+                    colspan="4"
+                    style="
+                      text-align: center;
+                      padding: 20px;
+                      color: var(--muted);
+                    "
+                  >
+                    Loading your invoices...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-hd">
+              <div class="card-title">Live Auctions</div>
+              <a href="buyer.html" class="card-link">View all →</a>
+            </div>
+            <div class="card-bd" id="liveAuctionsContainer">
+              <div
+                style="padding: 20px; text-align: center; color: var(--muted)"
+              >
+                Loading live auctions...
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        <!-- Portfolio Health + Contract Info -->
+        <div class="grid-2b">
+          <div class="card">
+            <div class="card-hd">
+              <div class="card-title">Platform Overview</div>
+            </div>
+            <div class="card-bd">
+              <div class="hrow">
+                <div class="hrow-top">
+                  <span>Total Invoices</span
+                  ><span class="tg" id="platformInvoices">--</span>
+                </div>
+                <div class="hbar">
+                  <div
+                    class="hfill"
+                    id="invoicesBar"
+                    style="width: 0%; background: var(--accent)"
+                  ></div>
+                </div>
+              </div>
+              <div class="hrow">
+                <div class="hrow-top">
+                  <span>Total Auctions</span
+                  ><span class="ta" id="platformAuctions">--</span>
+                </div>
+                <div class="hbar">
+                  <div
+                    class="hfill"
+                    id="auctionsBar"
+                    style="width: 0%; background: var(--green)"
+                  ></div>
+                </div>
+              </div>
+              <div class="hrow">
+                <div class="hrow-top">
+                  <span>Active Auctions</span
+                  ><span
+                    style="color: var(--yellow)"
+                    id="platformActiveAuctions"
+                    >--</span
+                  >
+                </div>
+                <div class="hbar">
+                  <div
+                    class="hfill"
+                    id="activeBar"
+                    style="width: 0%; background: var(--yellow)"
+                  ></div>
+                </div>
+              </div>
+              <div class="metrics2">
+                <div class="mbox">
+                  <div class="mlbl">Network</div>
+                  <div class="mval" style="font-size: 14px">Sepolia</div>
+                </div>
+                <div class="mbox">
+                  <div class="mlbl">Token</div>
+                  <div class="mval" style="font-size: 14px">USDC</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-hd">
+              <div class="card-title">Smart Contracts</div>
+              <span
+                style="font-size: 11px; color: var(--green); font-weight: 600"
+                >● Verified</span
+              >
+            </div>
+            <div class="card-bd">
+              <div class="act">
+                <div class="adot" style="background: var(--green)"></div>
+                <div>
+                  <div class="atxt"><strong>MockUSDC</strong></div>
+                  <div class="atime" id="usdcAddress">Loading...</div>
+                </div>
+              </div>
+              <div class="act">
+                <div class="adot" style="background: var(--accent)"></div>
+                <div>
+                  <div class="atxt"><strong>InvoiceRegistry</strong></div>
+                  <div class="atime" id="registryAddress">Loading...</div>
+                </div>
+              </div>
+              <div class="act">
+                <div class="adot" style="background: var(--yellow)"></div>
+                <div>
+                  <div class="atxt"><strong>AuctionContract</strong></div>
+                  <div class="atime" id="auctionAddress">Loading...</div>
+                </div>
+              </div>
+              <div class="act">
+                <div class="adot" style="background: var(--accent)"></div>
+                <div>
+                  <div class="atxt"><strong>EscrowManager</strong></div>
+                  <div class="atime" id="escrowAddress">Loading...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
 
-    <!-- Portfolio Health + Activity Feed -->
-    <div class="grid-2b">
-      <div class="card">
-        <div class="card-hd"><div class="card-title">Portfolio Health</div></div>
-        <div class="card-bd">
-          <div class="hrow">
-            <div class="hrow-top"><span>Invoices Factored</span><span class="tg">7 / 9</span></div>
-            <div class="hbar"><div class="hfill" style="width:78%;background:var(--accent)"></div></div>
+    <script>
+      // ========== GLOBAL STATE ==========
+      let userWallet = null;
+      let dashboardData = {
+        myInvoices: [],
+        allAuctions: [],
+        platformStats: {},
+      };
+
+      // ========== WEB3: CONNECT METAMASK ==========
+      async function connectMetaMask() {
+        try {
+          const connectBtn = document.getElementById("connectBtn");
+          connectBtn.textContent = "⏳ Connecting...";
+          connectBtn.disabled = true;
+
+          const wallet = await web3Utils.connectWallet();
+          userWallet = wallet;
+
+          // Update wallet box UI
+          document.getElementById("walletBox").innerHTML = `
+      <div class="wallet-status"><div class="wdot"></div> MetaMask Connected</div>
+      <div class="wallet-addr">${wallet.shortAddress} · Sepolia</div>
+    `;
+
+          // Update network info
+          document.getElementById(
+            "networkInfo",
+          ).textContent = `Connected: ${wallet.shortAddress}`;
+
+          // Display contract addresses
+          displayContractAddresses();
+
+          // Load all dashboard data
+          await loadDashboardData();
+
+          web3Utils.showNotification(
+            "Dashboard loaded successfully!",
+            "success",
+          );
+        } catch (error) {
+          console.error("Connection error:", error);
+          web3Utils.showNotification(
+            "Failed to connect: " + error.message,
+            "error",
+          );
+          document.getElementById("connectBtn").textContent =
+            "Connect MetaMask";
+          document.getElementById("connectBtn").disabled = false;
+        }
+      }
+
+      // Display contract addresses
+      function displayContractAddresses() {
+        document.getElementById("usdcAddress").innerHTML = `<a href="${
+          NETWORK_CONFIG.blockExplorer
+        }/address/${
+          CONTRACT_ADDRESSES.MockUSDC
+        }" target="_blank" rel="noopener">${CONTRACT_ADDRESSES.MockUSDC.slice(
+          0,
+          10,
+        )}...${CONTRACT_ADDRESSES.MockUSDC.slice(-8)}</a>`;
+        document.getElementById("registryAddress").innerHTML = `<a href="${
+          NETWORK_CONFIG.blockExplorer
+        }/address/${
+          CONTRACT_ADDRESSES.InvoiceRegistry
+        }" target="_blank" rel="noopener">${CONTRACT_ADDRESSES.InvoiceRegistry.slice(
+          0,
+          10,
+        )}...${CONTRACT_ADDRESSES.InvoiceRegistry.slice(-8)}</a>`;
+        document.getElementById("auctionAddress").innerHTML = `<a href="${
+          NETWORK_CONFIG.blockExplorer
+        }/address/${
+          CONTRACT_ADDRESSES.AuctionContract
+        }" target="_blank" rel="noopener">${CONTRACT_ADDRESSES.AuctionContract.slice(
+          0,
+          10,
+        )}...${CONTRACT_ADDRESSES.AuctionContract.slice(-8)}</a>`;
+        document.getElementById("escrowAddress").innerHTML = `<a href="${
+          NETWORK_CONFIG.blockExplorer
+        }/address/${
+          CONTRACT_ADDRESSES.EscrowManager
+        }" target="_blank" rel="noopener">${CONTRACT_ADDRESSES.EscrowManager.slice(
+          0,
+          10,
+        )}...${CONTRACT_ADDRESSES.EscrowManager.slice(-8)}</a>`;
+      }
+
+      // ========== LOAD ALL DASHBOARD DATA ==========
+      async function loadDashboardData() {
+        try {
+          // Load user's USDC balance
+          const balance = await web3Utils.getUSDCBalance();
+          document.getElementById("usdcBalance").textContent =
+            web3Utils.formatUSDC(balance);
+
+          // Load user's invoices
+          const myInvoices = await web3Utils.getUserInvoices();
+          dashboardData.myInvoices = myInvoices;
+          document.getElementById("invoiceCount").textContent =
+            myInvoices.length;
+          displayMyInvoices(myInvoices);
+
+          // Load all auctions
+          const allAuctions = await web3Utils.getAllAuctions();
+          dashboardData.allAuctions = allAuctions;
+
+          // Filter active auctions
+          const activeAuctions = allAuctions.filter(
+            (a) => a.active && a.timeRemaining > 0,
+          );
+          document.getElementById("activeAuctionsCount").textContent =
+            activeAuctions.length;
+          displayLiveAuctions(activeAuctions.slice(0, 3)); // Show top 3
+
+          // Calculate platform stats
+          await calculatePlatformStats();
+        } catch (error) {
+          console.error("Error loading dashboard data:", error);
+          web3Utils.showNotification(
+            "Error loading data: " + error.message,
+            "error",
+          );
+        }
+      }
+
+      // Display user's invoices in table
+      function displayMyInvoices(invoices) {
+        const tbody = document.getElementById("myInvoicesTable");
+
+        if (invoices.length === 0) {
+          tbody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">
+          No invoices yet. <a href="seller.html" style="color:var(--accent);">Create your first invoice →</a>
+        </td>
+      </tr>
+    `;
+          return;
+        }
+
+        tbody.innerHTML = invoices
+          .slice(0, 5)
+          .map(
+            (invoice) => `
+    <tr>
+      <td><span class="mono ta">#${invoice.id}</span></td>
+      <td>${invoice.buyer.slice(0, 6)}...${invoice.buyer.slice(-4)}</td>
+      <td class="tg">${web3Utils.formatUSDC(invoice.faceValue)}</td>
+      <td><span class="badge ${getStatusBadgeClass(invoice.status)}">${
+              invoice.status
+            }</span></td>
+    </tr>
+  `,
+          )
+          .join("");
+      }
+
+      // Display live auctions
+      function displayLiveAuctions(auctions) {
+        const container = document.getElementById("liveAuctionsContainer");
+
+        if (auctions.length === 0) {
+          container.innerHTML = `
+      <div style="padding:20px; text-align:center; color:var(--muted);">
+        No active auctions. <a href="seller.html" style="color:var(--accent);">Start one →</a>
+      </div>
+    `;
+          return;
+        }
+
+        container.innerHTML = auctions
+          .map((auction, index) => {
+            const faceValue = parseFloat(auction.faceValue);
+            const highestBid =
+              parseFloat(auction.highestBid) || parseFloat(auction.minBid);
+            const percentage = ((highestBid / faceValue) * 100).toFixed(1);
+
+            return `
+      <div class="auc">
+        <div class="auc-top">
+          <div>
+            <div class="auc-name">Auction #${auction.id}</div>
+            <div class="auc-id">Invoice #${
+              auction.invoiceId
+            } · ${web3Utils.formatTimeRemaining(
+              auction.timeRemaining,
+            )} left</div>
           </div>
-          <div class="hrow">
-            <div class="hrow-top"><span>Recovery Rate</span><span class="ta">91.9%</span></div>
-            <div class="hbar"><div class="hfill" style="width:91.9%;background:var(--green)"></div></div>
+          <div style="text-align:right">
+            <div class="auc-bid">${web3Utils.formatUSDC(highestBid)}</div>
+            <div class="auc-cnt">${
+              auction.highestBidder ===
+              "0x0000000000000000000000000000000000000000"
+                ? "No bids"
+                : "Leading bid"
+            }</div>
           </div>
-          <div class="hrow">
-            <div class="hrow-top"><span>Liquidity Utilization</span><span style="color:var(--yellow)">64%</span></div>
-            <div class="hbar"><div class="hfill" style="width:64%;background:var(--yellow)"></div></div>
-          </div>
-          <div class="metrics2">
-            <div class="mbox"><div class="mlbl">Days Saved</div><div class="mval tg">540</div></div>
-            <div class="mbox"><div class="mlbl">Avg Gas Fee</div><div class="mval ta">$0.42</div></div>
-          </div>
+        </div>
+        <div class="bar"><div class="bar-fill" style="width:${percentage}%"></div></div>
+        <div class="bar-labels">
+          <span>Min ${web3Utils.formatUSDC(auction.minBid)}</span>
+          <span>Face ${web3Utils.formatUSDC(faceValue)}</span>
+        </div>
+        <div class="timer-wrap">
+          <div class="tbox"><div class="tnum" id="a${index}h">--</div><div class="tlbl">hrs</div></div>
+          <div class="tbox"><div class="tnum" id="a${index}m">--</div><div class="tlbl">min</div></div>
+          <div class="tbox"><div class="tnum" id="a${index}s">--</div><div class="tlbl">sec</div></div>
         </div>
       </div>
+    `;
+          })
+          .join("");
 
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">On-chain Activity</div>
-          <span style="font-size:11px;color:var(--green);font-weight:600;">● Live</span>
-        </div>
-        <div class="card-bd">
-          <div class="act">
-            <div class="adot" style="background:var(--green)"></div>
-            <div><div class="atxt">LP3 placed winning bid of <strong>$9,750 USDC</strong> on INV-041</div><div class="atime">2 min ago · 0xa4f2...8b1c</div></div>
-          </div>
-          <div class="act">
-            <div class="adot" style="background:var(--yellow)"></div>
-            <div><div class="atxt">LP2 outbid — <strong>$9,700 USDC</strong> auto-refunded</div><div class="atime">3 min ago · 0xc8d1...2f4a</div></div>
-          </div>
-          <div class="act">
-            <div class="adot" style="background:var(--accent)"></div>
-            <div><div class="atxt">Auction started for INV-041 · Face value $10,000</div><div class="atime">6 hours ago · Block #6,847,101</div></div>
-          </div>
-          <div class="act">
-            <div class="adot" style="background:var(--green)"></div>
-            <div><div class="atxt">INV-038 settled — <strong>$18,500 USDC</strong> released</div><div class="atime">2 days ago · Block #6,830,482</div></div>
-          </div>
-        </div>
-      </div>
-    </div>
+        // Start timers for each auction
+        auctions.forEach((auction, index) => {
+          startTimer(auction.timeRemaining, index);
+        });
+      }
 
-  </main>
-</div>
+      // Calculate platform statistics
+      async function calculatePlatformStats() {
+        try {
+          // Get total invoice count
+          const totalInvoices =
+            await web3Utils.contracts.registry.invoiceCount();
+          document.getElementById("platformInvoices").textContent =
+            totalInvoices.toString();
 
-<script>
-  let s = 6 * 3600 + 14 * 60 + 32;
-  setInterval(() => {
-    if (s > 0) s--;
-    const pad = n => String(n).padStart(2, '0');
-    document.getElementById('a1h').textContent = pad(Math.floor(s / 3600));
-    document.getElementById('a1m').textContent = pad(Math.floor((s % 3600) / 60));
-    document.getElementById('a1s').textContent = pad(s % 60);
-  }, 1000);
-</script>
-</body>
+          // Get total auction count
+          const totalAuctions =
+            await web3Utils.contracts.auction.auctionCount();
+          document.getElementById("platformAuctions").textContent =
+            totalAuctions.toString();
+
+          // Active auctions already calculated
+          const activeCount = document.getElementById(
+            "activeAuctionsCount",
+          ).textContent;
+          document.getElementById("platformActiveAuctions").textContent =
+            activeCount;
+
+          // Calculate total volume (sum of all invoice face values)
+          let totalVolume = 0;
+          for (let i = 1; i <= Math.min(Number(totalInvoices), 20); i++) {
+            try {
+              const invoice = await web3Utils.getInvoice(i);
+              totalVolume += parseFloat(invoice.faceValue);
+            } catch (e) {
+              // Invoice might not exist
+            }
+          }
+          document.getElementById("totalVolume").textContent =
+            web3Utils.formatUSDC(totalVolume);
+
+          // Update progress bars
+          const invoicesPercent = Math.min(
+            100,
+            (Number(totalInvoices) / 10) * 100,
+          );
+          const auctionsPercent = Math.min(
+            100,
+            (Number(totalAuctions) / 10) * 100,
+          );
+          const activePercent =
+            Number(totalAuctions) > 0
+              ? (Number(activeCount) / Number(totalAuctions)) * 100
+              : 0;
+
+          document.getElementById(
+            "invoicesBar",
+          ).style.width = `${invoicesPercent}%`;
+          document.getElementById(
+            "auctionsBar",
+          ).style.width = `${auctionsPercent}%`;
+          document.getElementById(
+            "activeBar",
+          ).style.width = `${activePercent}%`;
+        } catch (error) {
+          console.error("Error calculating platform stats:", error);
+        }
+      }
+
+      // Timer function
+      function startTimer(seconds, index) {
+        let s = seconds;
+        const interval = setInterval(() => {
+          if (s > 0) s--;
+          const pad = (n) => String(n).padStart(2, "0");
+          const hEl = document.getElementById(`a${index}h`);
+          const mEl = document.getElementById(`a${index}m`);
+          const sEl = document.getElementById(`a${index}s`);
+
+          if (hEl) hEl.textContent = pad(Math.floor(s / 3600));
+          if (mEl) mEl.textContent = pad(Math.floor((s % 3600) / 60));
+          if (sEl) sEl.textContent = pad(s % 60);
+
+          if (s === 0) clearInterval(interval);
+        }, 1000);
+      }
+
+      // Set current date
+      function setCurrentDate() {
+        const options = {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        };
+        const date = new Date().toLocaleDateString("en-US", options);
+        document.getElementById("currentDate").textContent = date;
+      }
+
+      // Auto-connect on page load if previously connected
+      window.addEventListener("load", async () => {
+        setCurrentDate();
+
+        if (typeof window.ethereum !== "undefined") {
+          const accounts = await window.ethereum.request({
+            method: "eth_accounts",
+          });
+          if (accounts.length > 0) {
+            await connectMetaMask();
+          }
+        }
+      });
+    </script>
+  </body>
 </html>
