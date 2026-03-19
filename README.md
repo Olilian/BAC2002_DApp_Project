@@ -141,11 +141,11 @@ await Registry.createInvoice(buyerAddress, ethers.parseUnits("10000", 6), dueDat
 
 ## Team
 
-LEONG WEI JIE
-LIM JING HAN WAYNE
-LOH CHERNG JUN TRISTON
-ONG LI LIAN
-SEAH MING JUN
+- LEONG WEI JIE
+- LIM JING HAN WAYNE
+- LOH CHERNG JUN TRISTON
+- ONG LI LIAN
+- SEAH MING JUN
 
 ## License
 
