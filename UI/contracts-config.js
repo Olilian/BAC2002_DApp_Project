@@ -1,10 +1,10 @@
 // contracts-config.js
 // Contract addresses (update these after deployment to Sepolia)
 const CONTRACT_ADDRESSES = {
-  MockUSDC: "0x0000000000000000000000000000000000000000", // Update after deployment
-  InvoiceRegistry: "0x0000000000000000000000000000000000000000", // Update after deployment
-  AuctionContract: "0x0000000000000000000000000000000000000000", // Update after deployment
-  EscrowManager: "0x0000000000000000000000000000000000000000" // Update after deployment
+  MockUSDC: "0x2ec207bBB4754719C911262CA22F17F29ccb9DA2",
+  InvoiceRegistry: "0xe8f8CAC9C658F9D237b531ab0F1E1b269e593aC7",
+  AuctionContract: "0x0EA763d174A1dDe964f32f3229BA78a6f1000961",
+  EscrowManager: "0xEA70002b520a1E65838968D5F40DacA632b60f8C"
 };
 
 // Minimal ABIs (only functions we need for frontend)

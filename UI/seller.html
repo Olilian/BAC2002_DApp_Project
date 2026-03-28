@@ -894,7 +894,7 @@
           return;
         }
 
-        if (!ethers.utils.isAddress(buyerAddress)) {
+        if (!ethers.isAddress(buyerAddress)) {
           web3Utils.showNotification("Invalid buyer address", "error");
           return;
         }

@@ -36,14 +36,28 @@ contract InvoiceRegistry is Ownable {
     uint256 public invoiceCount;
     mapping(uint256 => Invoice) public invoices;
     mapping(address => uint256[]) public sellerInvoices;
+
+    // Authorized contracts (AuctionContract, EscrowManager) that can update status
+    mapping(address => bool) public authorizedContracts;
     
     // Events
     event InvoiceCreated(uint256 indexed invoiceId, address indexed seller, uint256 faceValue);
     event InvoiceVerified(uint256 indexed invoiceId);
     event InvoiceStatusChanged(uint256 indexed invoiceId, InvoiceStatus newStatus);
     event OwnershipTransferred(uint256 indexed invoiceId, address indexed newOwner);
+    event ContractAuthorized(address indexed contractAddress);
     
     constructor() Ownable(msg.sender) {}
+
+    /**
+     * @notice Authorize a contract to call updateStatus (admin only)
+     * @param contractAddress Address of the contract to authorize
+     */
+    function authorizeContract(address contractAddress) external onlyOwner {
+        require(contractAddress != address(0), "Invalid address");
+        authorizedContracts[contractAddress] = true;
+        emit ContractAuthorized(contractAddress);
+    }
     
     /**
      * @notice Create a new invoice
@@ -105,10 +119,10 @@ contract InvoiceRegistry is Ownable {
         Invoice storage invoice = invoices[invoiceId];
         require(invoice.exists, "Invoice does not exist");
         
-        // Only owner or current owner can update status
-        // In production, restrict this to specific contract addresses
         require(
-            msg.sender == owner() || msg.sender == invoice.currentOwner,
+            msg.sender == owner() ||
+            msg.sender == invoice.currentOwner ||
+            authorizedContracts[msg.sender],
             "Not authorized"
         );
         
@@ -127,8 +141,12 @@ contract InvoiceRegistry is Ownable {
         require(invoice.exists, "Invoice does not exist");
         require(newOwner != address(0), "Invalid new owner");
         
-        // Only current owner can transfer
-        require(msg.sender == invoice.currentOwner, "Not current owner");
+        // Only current owner or authorized contracts can transfer
+        require(
+            msg.sender == invoice.currentOwner ||
+            authorizedContracts[msg.sender],
+            "Not current owner"
+        );
         
         invoice.currentOwner = newOwner;
         

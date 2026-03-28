@@ -36,6 +36,10 @@ describe("Invoice Factoring System", function () {
       await usdc.getAddress(),
       await registry.getAddress()
     );
+
+    // Authorize AuctionContract and EscrowManager to call updateStatus
+    await registry.authorizeContract(await auction.getAddress());
+    await registry.authorizeContract(await escrow.getAddress());
     
     // Mint USDC to test accounts
     await usdc.mint(lp1.address, ethers.parseUnits("50000", 6));
