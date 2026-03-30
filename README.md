@@ -14,7 +14,7 @@ A decentralized invoice factoring platform where businesses can auction unpaid i
 - **AuctionContract.sol** - English auction with automatic refunds
 - **EscrowManager.sol** - Secure fund custody and final payment handling
 
-## Private Keys for Smart Contracts:
+## Transaction keys for Smart Contracts:
 - MockUSDC: 0x2ec207bBB4754719C911262CA22F17F29ccb9DA2
 - InvoiceRegistry: 0xe8f8CAC9C658F9D237b531ab0F1E1b269e593aC7
 - AuctionContract: 0x0EA763d174A1dDe964f32f3229BA78a6f1000961
