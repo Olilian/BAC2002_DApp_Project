@@ -10,11 +10,10 @@
     />
     <link rel="stylesheet" href="styles.css" />
 
-    <!-- ========== WEB3 INTEGRATION ========== -->
-    <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.umd.min.js"></script>
+    <!-- ethers.js v6 CDN (fixed from v5) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <script src="contracts-config.js"></script>
     <script src="web3-utils.js"></script>
-    <!-- ======================================= -->
 
     <style>
       /* Dashboard-specific styles */
@@ -48,6 +47,7 @@
       .hfill {
         height: 100%;
         border-radius: 3px;
+        transition: width 0.4s ease;
       }
 
       .metrics2 {
@@ -106,6 +106,41 @@
         gap: 5px;
         margin-top: 8px;
       }
+
+      /* Contract address rows */
+      .act {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--bg);
+      }
+      .act:last-child {
+        border-bottom: none;
+      }
+      .adot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 4px;
+      }
+      .atxt {
+        font-size: 13px;
+      }
+      .atime {
+        font-size: 11px;
+        color: var(--muted);
+        font-family: "DM Mono", monospace;
+        margin-top: 2px;
+      }
+      .atime a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .atime a:hover {
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
@@ -124,25 +159,23 @@
           <a class="nav-item active" href="main_dashboard.html"
             ><span class="nav-icon">◈</span> Dashboard</a
           >
-          <a class="nav-item" href="seller.html">
-            <span class="nav-icon">↑</span> Seller Portal</a
+          <a class="nav-item" href="seller.html"
+            ><span class="nav-icon">↑</span> Seller Portal</a
           >
-          <a class="nav-item" href="buyer.html">
-            <span class="nav-icon">⊕</span> Auction House</a
+          <a class="nav-item" href="marketplace.html"
+            ><span class="nav-icon">⊕</span> Marketplace</a
           >
           <div class="nav-label">Finance</div>
-          <a class="nav-item" href="#"
+          <a class="nav-item" href="seller.html"
             ><span class="nav-icon">≡</span> My Invoices</a
           >
-          <a class="nav-item" href="#"
-            ><span class="nav-icon">◷</span> History</a
+          <a class="nav-item" href="marketplace.html"
+            ><span class="nav-icon">◷</span> My Bids</a
           >
-          <a class="nav-item" href="#"
-            ><span class="nav-icon">⬡</span> Contracts</a
+          <a class="nav-item" href="#payInvoiceSection"
+            ><span class="nav-icon">⬡</span> Pay Invoice</a
           >
         </nav>
-
-        <!-- ========== WEB3: WALLET BOX ========== -->
         <div class="sidebar-footer">
           <div class="wallet-box" id="walletBox">
             <button
@@ -155,7 +188,6 @@
             </button>
           </div>
         </div>
-        <!-- ======================================= -->
       </aside>
 
       <!-- ── Main Content ── -->
@@ -163,7 +195,8 @@
         <div class="net-bar">
           <div class="ndot"></div>
           <strong>Ethereum Sepolia Testnet</strong>
-          <span class="sep">·</span> <span id="networkInfo">Not connected</span>
+          <span class="sep">·</span>
+          <span id="networkInfo">Not connected</span>
         </div>
 
         <div class="topbar">
@@ -174,12 +207,12 @@
           <a href="seller.html" class="btn btn-primary">+ New Invoice</a>
         </div>
 
-        <!-- Stat Cards -->
+        <!-- ── Stat Cards ── -->
         <div class="stats">
           <div class="stat">
             <div class="stat-lbl">USDC Balance</div>
             <div class="stat-val" id="usdcBalance">--</div>
-            <div class="stat-chg" id="usdcChange">Wallet balance</div>
+            <div class="stat-chg">Wallet balance</div>
           </div>
           <div class="stat">
             <div class="stat-lbl">My Invoices</div>
@@ -197,18 +230,18 @@
             >
               --
             </div>
-            <div class="stat-chg" id="auctionsChange">Live on platform</div>
+            <div class="stat-chg">Live on platform</div>
           </div>
           <div class="stat">
             <div class="stat-lbl">Total Platform Volume</div>
             <div class="stat-val" style="color: var(--accent)" id="totalVolume">
               --
             </div>
-            <div class="stat-chg" id="volumeChange">All invoices</div>
+            <div class="stat-chg">All invoices</div>
           </div>
         </div>
 
-        <!-- Invoice Table + Live Auctions -->
+        <!-- ── Invoice Table + Live Auctions ── -->
         <div class="grid-2">
           <div class="card">
             <div class="card-hd">
@@ -234,7 +267,7 @@
                       color: var(--muted);
                     "
                   >
-                    Loading your invoices...
+                    Connect wallet to load invoices
                   </td>
                 </tr>
               </tbody>
@@ -244,19 +277,96 @@
           <div class="card">
             <div class="card-hd">
               <div class="card-title">Live Auctions</div>
-              <a href="buyer.html" class="card-link">View all →</a>
+              <a href="marketplace.html" class="card-link">View all →</a>
             </div>
             <div class="card-bd" id="liveAuctionsContainer">
               <div
                 style="padding: 20px; text-align: center; color: var(--muted)"
               >
-                Loading live auctions...
+                Connect wallet to load auctions
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Portfolio Health + Contract Info -->
+        <!-- ── Pay Invoice (Debtor/Buyer Portal) ── -->
+        <div class="card" style="margin-bottom: 20px" id="payInvoiceSection">
+          <div class="card-hd">
+            <div class="card-title">Pay Invoice</div>
+            <span style="font-size: 11px; color: var(--muted)"
+              >For debtors/buyers paying at maturity</span
+            >
+          </div>
+          <div class="card-bd">
+            <div>
+              <div
+                style="
+                  font-size: 13px;
+                  color: var(--muted);
+                  margin-bottom: 16px;
+                "
+              >
+                If your wallet address is registered as a buyer on an invoice,
+                you can pay the full face value here at maturity. Funds are
+                automatically released to the liquidity provider.
+              </div>
+
+              <!-- Assigned invoices table -->
+              <div id="assignedInvoicesWrap">
+                <div
+                  style="
+                    text-align: center;
+                    padding: 20px;
+                    color: var(--muted);
+                    font-size: 13px;
+                  "
+                >
+                  Connect wallet to see invoices assigned to you
+                </div>
+              </div>
+
+              <!-- Manual pay by ID (fallback) -->
+              <div
+                style="
+                  margin-top: 16px;
+                  padding-top: 16px;
+                  border-top: 1px solid var(--border);
+                "
+              >
+                <div
+                  style="font-size: 12px; font-weight: 600; margin-bottom: 10px"
+                >
+                  Pay by Invoice ID
+                </div>
+                <div style="display: flex; gap: 10px; align-items: flex-end">
+                  <div class="field" style="flex: 1; margin-bottom: 0">
+                    <label>Invoice ID</label>
+                    <input
+                      type="number"
+                      id="payInvoiceId"
+                      placeholder="e.g. 3"
+                      min="1"
+                    />
+                  </div>
+                  <button
+                    class="btn btn-primary"
+                    onclick="handlePayInvoice()"
+                    id="payInvoiceBtn"
+                    style="flex-shrink: 0; height: 38px"
+                  >
+                    Pay Invoice
+                  </button>
+                </div>
+                <div
+                  id="payInvoiceStatus"
+                  style="margin-top: 10px; font-size: 12px; color: var(--muted)"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Platform Overview + Smart Contracts ── -->
         <div class="grid-2b">
           <div class="card">
             <div class="card-hd">
@@ -265,8 +375,8 @@
             <div class="card-bd">
               <div class="hrow">
                 <div class="hrow-top">
-                  <span>Total Invoices</span
-                  ><span class="tg" id="platformInvoices">--</span>
+                  <span>Total Invoices</span>
+                  <span class="tg" id="platformInvoices">--</span>
                 </div>
                 <div class="hbar">
                   <div
@@ -278,8 +388,8 @@
               </div>
               <div class="hrow">
                 <div class="hrow-top">
-                  <span>Total Auctions</span
-                  ><span class="ta" id="platformAuctions">--</span>
+                  <span>Total Auctions</span>
+                  <span class="ta" id="platformAuctions">--</span>
                 </div>
                 <div class="hbar">
                   <div
@@ -291,10 +401,8 @@
               </div>
               <div class="hrow">
                 <div class="hrow-top">
-                  <span>Active Auctions</span
-                  ><span
-                    style="color: var(--yellow)"
-                    id="platformActiveAuctions"
+                  <span>Active Auctions</span>
+                  <span style="color: var(--yellow)" id="platformActiveAuctions"
                     >--</span
                   >
                 </div>
@@ -322,9 +430,11 @@
           <div class="card">
             <div class="card-hd">
               <div class="card-title">Smart Contracts</div>
+              <!-- Verified badge is now dynamic — shows unverified if Etherscan check fails -->
               <span
-                style="font-size: 11px; color: var(--green); font-weight: 600"
-                >● Verified</span
+                id="verifiedBadge"
+                style="font-size: 11px; font-weight: 600; color: var(--muted)"
+                >● Checking...</span
               >
             </div>
             <div class="card-bd">
@@ -363,122 +473,133 @@
     </div>
 
     <script>
-      // ========== GLOBAL STATE ==========
+      // ══════════════════════════════════════════════════
+      // GLOBAL STATE
+      // ══════════════════════════════════════════════════
       let userWallet = null;
-      let dashboardData = {
-        myInvoices: [],
-        allAuctions: [],
-        platformStats: {},
-      };
+      const dashboardData = { myInvoices: [], allAuctions: [] };
+      const activeTimers = {};
 
-      // ========== WEB3: CONNECT METAMASK ==========
-      async function connectMetaMask() {
+      // ══════════════════════════════════════════════════
+      // WALLET CONNECTION
+      // ══════════════════════════════════════════════════
+      // silent=true when called from auto-connect on load — suppresses the notification
+      async function connectMetaMask(silent = false) {
         try {
-          const connectBtn = document.getElementById("connectBtn");
-          connectBtn.textContent = "⏳ Connecting...";
-          connectBtn.disabled = true;
+          const btn = document.getElementById("connectBtn");
+          if (!silent) {
+            btn.textContent = "Connecting...";
+            btn.disabled = true;
+          }
 
           const wallet = await web3Utils.connectWallet();
           userWallet = wallet;
 
-          // Update wallet box UI
           document.getElementById("walletBox").innerHTML = `
-      <div class="wallet-status"><div class="wdot"></div> MetaMask Connected</div>
-      <div class="wallet-addr">${wallet.shortAddress} · Sepolia</div>
-    `;
-
-          // Update network info
+            <div class="wallet-status"><div class="wdot"></div> MetaMask Connected</div>
+            <div class="wallet-addr">${wallet.shortAddress} · Sepolia</div>`;
           document.getElementById(
             "networkInfo",
           ).textContent = `Connected: ${wallet.shortAddress}`;
 
-          // Display contract addresses
           displayContractAddresses();
-
-          // Load all dashboard data
           await loadDashboardData();
 
-          web3Utils.showNotification(
-            "Dashboard loaded successfully!",
-            "success",
-          );
+          if (!silent)
+            web3Utils.showNotification("Dashboard loaded!", "success");
         } catch (error) {
           console.error("Connection error:", error);
-          web3Utils.showNotification(
-            "Failed to connect: " + error.message,
-            "error",
-          );
-          document.getElementById("connectBtn").textContent =
-            "Connect MetaMask";
-          document.getElementById("connectBtn").disabled = false;
+          if (!silent)
+            web3Utils.showNotification(
+              "Failed to connect: " + error.message,
+              "error",
+            );
+          const btn = document.getElementById("connectBtn");
+          btn.textContent = "Connect MetaMask";
+          btn.disabled = false;
         }
       }
 
-      // Display contract addresses
+      // ══════════════════════════════════════════════════
+      // CONTRACT ADDRESSES — display with Etherscan links
+      // ══════════════════════════════════════════════════
       function displayContractAddresses() {
-        document.getElementById("usdcAddress").innerHTML = `<a href="${
-          NETWORK_CONFIG.blockExplorer
-        }/address/${
-          CONTRACT_ADDRESSES.MockUSDC
-        }" target="_blank" rel="noopener">${CONTRACT_ADDRESSES.MockUSDC.slice(
-          0,
-          10,
-        )}...${CONTRACT_ADDRESSES.MockUSDC.slice(-8)}</a>`;
-        document.getElementById("registryAddress").innerHTML = `<a href="${
-          NETWORK_CONFIG.blockExplorer
-        }/address/${
-          CONTRACT_ADDRESSES.InvoiceRegistry
-        }" target="_blank" rel="noopener">${CONTRACT_ADDRESSES.InvoiceRegistry.slice(
-          0,
-          10,
-        )}...${CONTRACT_ADDRESSES.InvoiceRegistry.slice(-8)}</a>`;
-        document.getElementById("auctionAddress").innerHTML = `<a href="${
-          NETWORK_CONFIG.blockExplorer
-        }/address/${
-          CONTRACT_ADDRESSES.AuctionContract
-        }" target="_blank" rel="noopener">${CONTRACT_ADDRESSES.AuctionContract.slice(
-          0,
-          10,
-        )}...${CONTRACT_ADDRESSES.AuctionContract.slice(-8)}</a>`;
-        document.getElementById("escrowAddress").innerHTML = `<a href="${
-          NETWORK_CONFIG.blockExplorer
-        }/address/${
-          CONTRACT_ADDRESSES.EscrowManager
-        }" target="_blank" rel="noopener">${CONTRACT_ADDRESSES.EscrowManager.slice(
-          0,
-          10,
-        )}...${CONTRACT_ADDRESSES.EscrowManager.slice(-8)}</a>`;
+        const fmt = (addr) =>
+          `<a href="${
+            NETWORK_CONFIG.blockExplorer
+          }/address/${addr}" target="_blank" rel="noopener">
+            ${addr.slice(0, 10)}...${addr.slice(-8)}
+          </a>`;
+
+        document.getElementById("usdcAddress").innerHTML = fmt(
+          CONTRACT_ADDRESSES.MockUSDC,
+        );
+        document.getElementById("registryAddress").innerHTML = fmt(
+          CONTRACT_ADDRESSES.InvoiceRegistry,
+        );
+        document.getElementById("auctionAddress").innerHTML = fmt(
+          CONTRACT_ADDRESSES.AuctionContract,
+        );
+        document.getElementById("escrowAddress").innerHTML = fmt(
+          CONTRACT_ADDRESSES.EscrowManager,
+        );
+
+        // Try to confirm contracts are reachable by calling a cheap view function
+        // If it succeeds the contracts are deployed and responsive
+        web3Utils.contracts.registry
+          .invoiceCount()
+          .then(() => {
+            document.getElementById("verifiedBadge").textContent = "● Deployed";
+            document.getElementById("verifiedBadge").style.color =
+              "var(--green)";
+          })
+          .catch(() => {
+            document.getElementById("verifiedBadge").textContent =
+              "● Unreachable";
+            document.getElementById("verifiedBadge").style.color = "var(--red)";
+          });
       }
 
-      // ========== LOAD ALL DASHBOARD DATA ==========
+      // ══════════════════════════════════════════════════
+      // LOAD ALL DASHBOARD DATA
+      // ══════════════════════════════════════════════════
       async function loadDashboardData() {
         try {
-          // Load user's USDC balance
-          const balance = await web3Utils.getUSDCBalance();
+          // Run balance, invoices, and auctions fetches in parallel
+          const [balance, myInvoices, allAuctions] = await Promise.all([
+            web3Utils.getUSDCBalance(),
+            web3Utils.getUserInvoices(),
+            web3Utils.getAllAuctions(),
+          ]);
+
+          // ── USDC Balance ──────────────────────────────
           document.getElementById("usdcBalance").textContent =
             web3Utils.formatUSDC(balance);
 
-          // Load user's invoices
-          const myInvoices = await web3Utils.getUserInvoices();
+          // ── My Invoices ───────────────────────────────
           dashboardData.myInvoices = myInvoices;
           document.getElementById("invoiceCount").textContent =
             myInvoices.length;
+          document.getElementById("invoiceChange").textContent =
+            myInvoices.length === 1
+              ? "1 invoice created"
+              : `${myInvoices.length} invoices created`;
           displayMyInvoices(myInvoices);
 
-          // Load all auctions
-          const allAuctions = await web3Utils.getAllAuctions();
+          // ── Live Auctions ─────────────────────────────
           dashboardData.allAuctions = allAuctions;
-
-          // Filter active auctions
           const activeAuctions = allAuctions.filter(
             (a) => a.active && a.timeRemaining > 0,
           );
           document.getElementById("activeAuctionsCount").textContent =
             activeAuctions.length;
-          displayLiveAuctions(activeAuctions.slice(0, 3)); // Show top 3
+          displayLiveAuctions(activeAuctions.slice(0, 3));
 
-          // Calculate platform stats
-          await calculatePlatformStats();
+          // ── Platform Stats (parallel) ─────────────────
+          await calculatePlatformStats(allAuctions, activeAuctions);
+
+          // ── Assigned invoices (debtor view) ──────────
+          await loadAssignedInvoices();
         } catch (error) {
           console.error("Error loading dashboard data:", error);
           web3Utils.showNotification(
@@ -488,18 +609,246 @@
         }
       }
 
-      // Display user's invoices in table
+      // ══════════════════════════════════════════════════
+      // ASSIGNED INVOICES — debtor/buyer view
+      // Scans all invoices to find ones where buyer === connected wallet
+      // ══════════════════════════════════════════════════
+      async function loadAssignedInvoices() {
+        const wrap = document.getElementById("assignedInvoicesWrap");
+        if (!userWallet) return;
+
+        try {
+          // Get total invoice count and fetch all in parallel
+          const totalBN = await web3Utils.contracts.registry.invoiceCount();
+          const total = Number(totalBN);
+
+          if (total === 0) {
+            wrap.innerHTML = `<div style="text-align:center; padding:16px; color:var(--muted); font-size:13px">No invoices on platform yet.</div>`;
+            return;
+          }
+
+          const allInvoices = await Promise.all(
+            Array.from({ length: total }, (_, i) =>
+              web3Utils.getInvoice(i + 1).catch(() => null),
+            ),
+          );
+
+          // Filter to invoices where connected wallet is the buyer
+          const myAddress = web3Utils.userAddress.toLowerCase();
+          const assigned = allInvoices.filter(
+            (inv) => inv && inv.buyer.toLowerCase() === myAddress,
+          );
+
+          if (assigned.length === 0) {
+            wrap.innerHTML = `
+              <div style="text-align:center; padding:16px; color:var(--muted); font-size:13px">
+                No invoices assigned to your wallet address.
+              </div>`;
+            return;
+          }
+
+          // For each assigned invoice check escrow status
+          const rows = await Promise.all(
+            assigned.map(async (inv) => {
+              let escrow = null;
+              try {
+                escrow = await web3Utils.getEscrow(inv.id);
+              } catch (e) {}
+
+              const isDue = escrow && new Date() >= escrow.dueDate;
+              const hasEscrow = escrow && parseFloat(escrow.amount) > 0;
+              const isPaid = escrow && escrow.paid;
+              const statusText = isPaid
+                ? "Paid"
+                : !hasEscrow
+                ? "Awaiting escrow"
+                : !isDue
+                ? `Due ${escrow.dueDate.toLocaleDateString()}`
+                : "Payment due";
+              const statusClass = isPaid
+                ? "badge-green"
+                : !hasEscrow
+                ? "badge-gray"
+                : !isDue
+                ? "badge-blue"
+                : "badge-yellow";
+
+              return `
+              <tr>
+                <td><span class="mono ta">#${inv.id}</span></td>
+                <td class="tg">${web3Utils.formatUSDC(inv.faceValue)}</td>
+                <td>${inv.dueDate.toLocaleDateString()}</td>
+                <td><span class="badge ${statusClass}">${statusText}</span></td>
+                <td>
+                  ${
+                    hasEscrow && !isPaid && isDue
+                      ? `<button class="btn btn-primary" style="font-size:11px; padding:4px 10px"
+                         onclick="handlePayInvoiceById(${inv.id}, '${
+                          escrow.amount
+                        }')"
+                         id="pay-btn-${inv.id}">
+                         Pay ${web3Utils.formatUSDC(inv.faceValue)}
+                       </button>`
+                      : hasEscrow && !isPaid && !isDue
+                      ? `<span style="font-size:11px; color:var(--muted)">Not due yet</span>`
+                      : isPaid
+                      ? `<span style="font-size:11px; color:var(--green)">✓ Complete</span>`
+                      : `<span style="font-size:11px; color:var(--muted)">Pending setup</span>`
+                  }
+                </td>
+              </tr>`;
+            }),
+          );
+
+          wrap.innerHTML = `
+            <table>
+              <thead>
+                <tr>
+                  <th>Invoice ID</th>
+                  <th>Amount Due</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>${rows.join("")}</tbody>
+            </table>`;
+        } catch (error) {
+          console.error("Error loading assigned invoices:", error);
+          wrap.innerHTML = `<div style="color:var(--red); font-size:13px; padding:10px">Error: ${error.message}</div>`;
+        }
+      }
+
+      // ══════════════════════════════════════════════════
+      // PAY INVOICE — called from assigned invoices table
+      // ══════════════════════════════════════════════════
+      async function handlePayInvoiceById(invoiceId, amount) {
+        if (!userWallet) {
+          web3Utils.showNotification("Please connect MetaMask first", "error");
+          return;
+        }
+        try {
+          const btn = document.getElementById(`pay-btn-${invoiceId}`);
+          btn.textContent = "Awaiting MetaMask...";
+          btn.disabled = true;
+
+          await web3Utils.payInvoice(invoiceId, amount);
+          web3Utils.showNotification(
+            `Invoice #${invoiceId} paid! Funds released to LP.`,
+            "success",
+          );
+          await loadAssignedInvoices(); // Refresh table
+        } catch (error) {
+          console.error("Pay invoice error:", error);
+          web3Utils.showNotification(
+            "Payment failed: " + error.message,
+            "error",
+          );
+          const btn = document.getElementById(`pay-btn-${invoiceId}`);
+          if (btn) {
+            btn.textContent = `Pay ${web3Utils.formatUSDC(parseFloat(amount))}`;
+            btn.disabled = false;
+          }
+        }
+      }
+
+      // ══════════════════════════════════════════════════
+      // PAY INVOICE — manual input by ID
+      // ══════════════════════════════════════════════════
+      async function handlePayInvoice() {
+        if (!userWallet) {
+          web3Utils.showNotification("Please connect MetaMask first", "error");
+          return;
+        }
+
+        const invoiceId = document.getElementById("payInvoiceId").value;
+        if (!invoiceId || parseInt(invoiceId) < 1) {
+          web3Utils.showNotification("Enter a valid Invoice ID", "error");
+          return;
+        }
+
+        const statusEl = document.getElementById("payInvoiceStatus");
+
+        try {
+          const btn = document.getElementById("payInvoiceBtn");
+          btn.textContent = "Checking...";
+          btn.disabled = true;
+          statusEl.textContent = "";
+
+          // Fetch escrow to get amount
+          const escrow = await web3Utils.getEscrow(invoiceId);
+
+          if (!escrow || parseFloat(escrow.amount) === 0) {
+            statusEl.innerHTML = `<span style="color:var(--red)">No escrow found for Invoice #${invoiceId}. LP may not have created it yet.</span>`;
+            btn.textContent = "Pay Invoice";
+            btn.disabled = false;
+            return;
+          }
+
+          if (escrow.paid) {
+            statusEl.innerHTML = `<span style="color:var(--green)">✓ Invoice #${invoiceId} is already paid.</span>`;
+            btn.textContent = "Pay Invoice";
+            btn.disabled = false;
+            return;
+          }
+
+          const isDue = new Date() >= escrow.dueDate;
+          if (!isDue) {
+            statusEl.innerHTML = `<span style="color:var(--muted)">Invoice not due until ${escrow.dueDate.toLocaleDateString()}.</span>`;
+            btn.textContent = "Pay Invoice";
+            btn.disabled = false;
+            return;
+          }
+
+          // All checks passed — confirm buyer address matches
+          if (
+            escrow.buyer.toLowerCase() !== web3Utils.userAddress.toLowerCase()
+          ) {
+            statusEl.innerHTML = `<span style="color:var(--red)">Your wallet is not the registered buyer for this invoice.</span>`;
+            btn.textContent = "Pay Invoice";
+            btn.disabled = false;
+            return;
+          }
+
+          btn.textContent = "Awaiting MetaMask...";
+          await web3Utils.payInvoice(invoiceId, escrow.amount);
+
+          statusEl.innerHTML = `<span style="color:var(--green)">✓ Invoice #${invoiceId} paid! ${web3Utils.formatUSDC(
+            escrow.amount,
+          )} sent to LP.</span>`;
+          web3Utils.showNotification(
+            `Invoice #${invoiceId} paid successfully!`,
+            "success",
+          );
+          btn.textContent = "Pay Invoice";
+          btn.disabled = false;
+
+          await loadAssignedInvoices();
+        } catch (error) {
+          console.error("Manual pay error:", error);
+          web3Utils.showNotification(
+            "Payment failed: " + error.message,
+            "error",
+          );
+          statusEl.innerHTML = `<span style="color:var(--red)">Error: ${error.message}</span>`;
+          document.getElementById("payInvoiceBtn").textContent = "Pay Invoice";
+          document.getElementById("payInvoiceBtn").disabled = false;
+        }
+      }
+
+      // ══════════════════════════════════════════════════
+      // MY INVOICES TABLE
+      // ══════════════════════════════════════════════════
       function displayMyInvoices(invoices) {
         const tbody = document.getElementById("myInvoicesTable");
 
         if (invoices.length === 0) {
           tbody.innerHTML = `
-      <tr>
-        <td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">
-          No invoices yet. <a href="seller.html" style="color:var(--accent);">Create your first invoice →</a>
-        </td>
-      </tr>
-    `;
+            <tr>
+              <td colspan="4" style="text-align:center; padding:20px; color:var(--muted)">
+                No invoices yet. <a href="seller.html" style="color:var(--accent)">Create your first invoice →</a>
+              </td>
+            </tr>`;
           return;
         }
 
@@ -507,29 +856,29 @@
           .slice(0, 5)
           .map(
             (invoice) => `
-    <tr>
-      <td><span class="mono ta">#${invoice.id}</span></td>
-      <td>${invoice.buyer.slice(0, 6)}...${invoice.buyer.slice(-4)}</td>
-      <td class="tg">${web3Utils.formatUSDC(invoice.faceValue)}</td>
-      <td><span class="badge ${getStatusBadgeClass(invoice.status)}">${
+          <tr>
+            <td><span class="mono ta">#${invoice.id}</span></td>
+            <td>${invoice.buyer.slice(0, 6)}...${invoice.buyer.slice(-4)}</td>
+            <td class="tg">${web3Utils.formatUSDC(invoice.faceValue)}</td>
+            <td><span class="badge ${getStatusBadgeClass(invoice.status)}">${
               invoice.status
             }</span></td>
-    </tr>
-  `,
+          </tr>`,
           )
           .join("");
       }
 
-      // Display live auctions
+      // ══════════════════════════════════════════════════
+      // LIVE AUCTIONS PANEL
+      // ══════════════════════════════════════════════════
       function displayLiveAuctions(auctions) {
         const container = document.getElementById("liveAuctionsContainer");
 
         if (auctions.length === 0) {
           container.innerHTML = `
-      <div style="padding:20px; text-align:center; color:var(--muted);">
-        No active auctions. <a href="seller.html" style="color:var(--accent);">Start one →</a>
-      </div>
-    `;
+            <div style="padding:20px; text-align:center; color:var(--muted)">
+              No active auctions. <a href="seller.html" style="color:var(--accent)">Start one →</a>
+            </div>`;
           return;
         }
 
@@ -539,155 +888,197 @@
             const highestBid =
               parseFloat(auction.highestBid) || parseFloat(auction.minBid);
             const percentage = ((highestBid / faceValue) * 100).toFixed(1);
+            const noBids =
+              auction.highestBidder ===
+              "0x0000000000000000000000000000000000000000";
 
             return `
-      <div class="auc">
-        <div class="auc-top">
-          <div>
-            <div class="auc-name">Auction #${auction.id}</div>
-            <div class="auc-id">Invoice #${
-              auction.invoiceId
-            } · ${web3Utils.formatTimeRemaining(
+            <div class="auc">
+              <div class="auc-top">
+                <div>
+                  <div class="auc-name">Auction #${auction.id}</div>
+                  <div class="auc-id">Invoice #${
+                    auction.invoiceId
+                  } · ${web3Utils.formatTimeRemaining(
               auction.timeRemaining,
             )} left</div>
-          </div>
-          <div style="text-align:right">
-            <div class="auc-bid">${web3Utils.formatUSDC(highestBid)}</div>
-            <div class="auc-cnt">${
-              auction.highestBidder ===
-              "0x0000000000000000000000000000000000000000"
-                ? "No bids"
-                : "Leading bid"
-            }</div>
-          </div>
-        </div>
-        <div class="bar"><div class="bar-fill" style="width:${percentage}%"></div></div>
-        <div class="bar-labels">
-          <span>Min ${web3Utils.formatUSDC(auction.minBid)}</span>
-          <span>Face ${web3Utils.formatUSDC(faceValue)}</span>
-        </div>
-        <div class="timer-wrap">
-          <div class="tbox"><div class="tnum" id="a${index}h">--</div><div class="tlbl">hrs</div></div>
-          <div class="tbox"><div class="tnum" id="a${index}m">--</div><div class="tlbl">min</div></div>
-          <div class="tbox"><div class="tnum" id="a${index}s">--</div><div class="tlbl">sec</div></div>
-        </div>
-      </div>
-    `;
+                </div>
+                <div style="text-align:right">
+                  <div class="auc-bid">${web3Utils.formatUSDC(highestBid)}</div>
+                  <div class="auc-cnt">${
+                    noBids ? "No bids yet" : "Leading bid"
+                  }</div>
+                </div>
+              </div>
+              <div class="bar"><div class="bar-fill" style="width:${percentage}%"></div></div>
+              <div class="bar-labels">
+                <span>Min ${web3Utils.formatUSDC(
+                  parseFloat(auction.minBid),
+                )}</span>
+                <span>Face ${web3Utils.formatUSDC(faceValue)}</span>
+              </div>
+              <div class="timer-wrap">
+                <div class="tbox"><div class="tnum" id="d${index}h">--</div><div class="tlbl">hrs</div></div>
+                <div class="tbox"><div class="tnum" id="d${index}m">--</div><div class="tlbl">min</div></div>
+                <div class="tbox"><div class="tnum" id="d${index}s">--</div><div class="tlbl">sec</div></div>
+              </div>
+            </div>`;
           })
           .join("");
 
-        // Start timers for each auction
-        auctions.forEach((auction, index) => {
-          startTimer(auction.timeRemaining, index);
-        });
+        // Start countdown timer for each displayed auction
+        auctions.forEach((auction, index) =>
+          startTimer(auction.timeRemaining, index),
+        );
       }
 
-      // Calculate platform statistics
-      async function calculatePlatformStats() {
+      // ══════════════════════════════════════════════════
+      // PLATFORM STATS
+      // Fixed: parallel fetches instead of serial for-loop
+      // ══════════════════════════════════════════════════
+      async function calculatePlatformStats(allAuctions, activeAuctions) {
         try {
-          // Get total invoice count
-          const totalInvoices =
+          // These two are already known from the data we loaded above
+          const totalAuctionCount = allAuctions.length;
+          const activeAuctionCount = activeAuctions.length;
+
+          // Get total invoice count from contract (includes invoices by all users)
+          const totalInvoicesBN =
             await web3Utils.contracts.registry.invoiceCount();
+          const totalInvoices = Number(totalInvoicesBN);
+
           document.getElementById("platformInvoices").textContent =
-            totalInvoices.toString();
-
-          // Get total auction count
-          const totalAuctions =
-            await web3Utils.contracts.auction.auctionCount();
+            totalInvoices;
           document.getElementById("platformAuctions").textContent =
-            totalAuctions.toString();
-
-          // Active auctions already calculated
-          const activeCount = document.getElementById(
-            "activeAuctionsCount",
-          ).textContent;
+            totalAuctionCount;
           document.getElementById("platformActiveAuctions").textContent =
-            activeCount;
+            activeAuctionCount;
 
-          // Calculate total volume (sum of all invoice face values)
-          let totalVolume = 0;
-          for (let i = 1; i <= Math.min(Number(totalInvoices), 20); i++) {
-            try {
-              const invoice = await web3Utils.getInvoice(i);
-              totalVolume += parseFloat(invoice.faceValue);
-            } catch (e) {
-              // Invoice might not exist
-            }
-          }
+          // Calculate total platform volume using parallel fetches
+          // Fetch all invoices at once instead of one-by-one serial awaits
+          const invoiceIds = Array.from(
+            { length: Math.min(totalInvoices, 50) },
+            (_, i) => i + 1,
+          );
+          const invoiceResults = await Promise.all(
+            invoiceIds.map((id) => web3Utils.getInvoice(id).catch(() => null)),
+          );
+
+          const totalVolume = invoiceResults
+            .filter(Boolean)
+            .reduce((sum, inv) => sum + parseFloat(inv.faceValue), 0);
+
           document.getElementById("totalVolume").textContent =
             web3Utils.formatUSDC(totalVolume);
 
-          // Update progress bars
-          const invoicesPercent = Math.min(
+          // Progress bars — scale relative to 10 as a soft ceiling for POC
+          const ceiling = Math.max(10, totalInvoices, totalAuctionCount);
+          document.getElementById("invoicesBar").style.width = `${Math.min(
             100,
-            (Number(totalInvoices) / 10) * 100,
-          );
-          const auctionsPercent = Math.min(
+            (totalInvoices / ceiling) * 100,
+          )}%`;
+          document.getElementById("auctionsBar").style.width = `${Math.min(
             100,
-            (Number(totalAuctions) / 10) * 100,
-          );
-          const activePercent =
-            Number(totalAuctions) > 0
-              ? (Number(activeCount) / Number(totalAuctions)) * 100
-              : 0;
-
-          document.getElementById(
-            "invoicesBar",
-          ).style.width = `${invoicesPercent}%`;
-          document.getElementById(
-            "auctionsBar",
-          ).style.width = `${auctionsPercent}%`;
-          document.getElementById(
-            "activeBar",
-          ).style.width = `${activePercent}%`;
+            (totalAuctionCount / ceiling) * 100,
+          )}%`;
+          document.getElementById("activeBar").style.width =
+            totalAuctionCount > 0
+              ? `${Math.min(
+                  100,
+                  (activeAuctionCount / totalAuctionCount) * 100,
+                )}%`
+              : "0%";
         } catch (error) {
           console.error("Error calculating platform stats:", error);
         }
       }
 
-      // Timer function
+      // ══════════════════════════════════════════════════
+      // COUNTDOWN TIMERS
+      // Fixed: check s<=0 before decrementing (off-by-one fix)
+      // ══════════════════════════════════════════════════
       function startTimer(seconds, index) {
+        if (activeTimers[index]) clearInterval(activeTimers[index]);
+
         let s = seconds;
-        const interval = setInterval(() => {
-          if (s > 0) s--;
-          const pad = (n) => String(n).padStart(2, "0");
-          const hEl = document.getElementById(`a${index}h`);
-          const mEl = document.getElementById(`a${index}m`);
-          const sEl = document.getElementById(`a${index}s`);
+        const pad = (n) => String(n).padStart(2, "0");
 
-          if (hEl) hEl.textContent = pad(Math.floor(s / 3600));
-          if (mEl) mEl.textContent = pad(Math.floor((s % 3600) / 60));
-          if (sEl) sEl.textContent = pad(s % 60);
+        const tick = () => {
+          const hEl = document.getElementById(`d${index}h`);
+          const mEl = document.getElementById(`d${index}m`);
+          const sEl = document.getElementById(`d${index}s`);
+          if (!hEl) {
+            clearInterval(activeTimers[index]);
+            return;
+          }
 
-          if (s === 0) clearInterval(interval);
-        }, 1000);
-      }
-
-      // Set current date
-      function setCurrentDate() {
-        const options = {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
+          if (s <= 0) {
+            hEl.textContent = "00";
+            mEl.textContent = "00";
+            sEl.textContent = "00";
+            clearInterval(activeTimers[index]);
+            return;
+          }
+          hEl.textContent = pad(Math.floor(s / 3600));
+          mEl.textContent = pad(Math.floor((s % 3600) / 60));
+          sEl.textContent = pad(s % 60);
+          s--;
         };
-        const date = new Date().toLocaleDateString("en-US", options);
-        document.getElementById("currentDate").textContent = date;
+
+        tick();
+        activeTimers[index] = setInterval(tick, 1000);
       }
 
-      // Auto-connect on page load if previously connected
+      // ══════════════════════════════════════════════════
+      // DATE DISPLAY
+      // ══════════════════════════════════════════════════
+      function setCurrentDate() {
+        document.getElementById("currentDate").textContent =
+          new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+      }
+
+      // ══════════════════════════════════════════════════
+      // AUTO-CONNECT ON LOAD
+      // ══════════════════════════════════════════════════
       window.addEventListener("load", async () => {
         setCurrentDate();
+        // Always show contract addresses even before wallet connect
+        displayContractAddressesStatic();
 
         if (typeof window.ethereum !== "undefined") {
           const accounts = await window.ethereum.request({
             method: "eth_accounts",
           });
-          if (accounts.length > 0) {
-            await connectMetaMask();
-          }
+          if (accounts.length > 0) await connectMetaMask(true); // silent — no notification
         }
       });
+
+      // Show addresses from config immediately on load (no wallet needed)
+      function displayContractAddressesStatic() {
+        const fmt = (addr) =>
+          `<a href="${
+            NETWORK_CONFIG.blockExplorer
+          }/address/${addr}" target="_blank" rel="noopener">
+            ${addr.slice(0, 10)}...${addr.slice(-8)}
+          </a>`;
+        document.getElementById("usdcAddress").innerHTML = fmt(
+          CONTRACT_ADDRESSES.MockUSDC,
+        );
+        document.getElementById("registryAddress").innerHTML = fmt(
+          CONTRACT_ADDRESSES.InvoiceRegistry,
+        );
+        document.getElementById("auctionAddress").innerHTML = fmt(
+          CONTRACT_ADDRESSES.AuctionContract,
+        );
+        document.getElementById("escrowAddress").innerHTML = fmt(
+          CONTRACT_ADDRESSES.EscrowManager,
+        );
+      }
     </script>
   </body>
 </html>

@@ -10,20 +10,17 @@
     />
     <link rel="stylesheet" href="styles.css" />
 
-    <!-- ========== WEB3 INTEGRATION ========== -->
-    <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.umd.min.js"></script>
+    <!-- ethers.js v6 CDN (fixed from v5) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <script src="contracts-config.js"></script>
     <script src="web3-utils.js"></script>
-    <!-- ======================================= -->
 
     <style>
-      /* Seller-specific styles */
       .content-grid {
         display: grid;
         grid-template-columns: 1fr 300px;
         gap: 16px;
       }
-
       .tag {
         display: inline-flex;
         padding: 2px 8px;
@@ -39,6 +36,10 @@
         background: var(--green-light);
         color: var(--green);
       }
+      .tag-yellow {
+        background: var(--yellow-light, #fef9c3);
+        color: var(--yellow);
+      }
 
       .prev-val-green {
         color: var(--green);
@@ -50,6 +51,7 @@
         color: var(--accent);
       }
 
+      /* Live auction box */
       .live-box {
         background: var(--green-light);
         border: 1px solid #bbf7d0;
@@ -199,6 +201,34 @@
       .how-text strong {
         color: var(--text);
       }
+
+      /* Start auction form */
+      .auction-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      /* Empty state */
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--muted);
+      }
+      .empty-state-icon {
+        font-size: 32px;
+        margin-bottom: 12px;
+      }
+      .empty-state-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 6px;
+      }
+      .empty-state-sub {
+        font-size: 13px;
+      }
     </style>
   </head>
   <body>
@@ -217,25 +247,26 @@
           <a class="nav-item" href="main_dashboard.html"
             ><span class="nav-icon">◈</span> Dashboard</a
           >
-          <a class="nav-item active" href="seller.html">
-            <span class="nav-icon">↑</span> Seller Portal</a
+          <a class="nav-item active" href="seller.html"
+            ><span class="nav-icon">↑</span> Seller Portal</a
           >
-          <a class="nav-item" href="buyer.html">
-            <span class="nav-icon">⊕</span> Auction House</a
+          <a class="nav-item" href="marketplace.html"
+            ><span class="nav-icon">⊕</span> Marketplace</a
           >
           <div class="nav-label">Finance</div>
-          <a class="nav-item" href="#"
+          <a
+            class="nav-item"
+            href="#"
+            onclick="show('my-auction'); loadMyAuctions(); return false;"
             ><span class="nav-icon">≡</span> My Invoices</a
           >
-          <a class="nav-item" href="#"
+          <a
+            class="nav-item"
+            href="#"
+            onclick="show('history'); loadHistory(); return false;"
             ><span class="nav-icon">◷</span> History</a
           >
-          <a class="nav-item" href="#"
-            ><span class="nav-icon">⬡</span> Contracts</a
-          >
         </nav>
-
-        <!-- ========== WEB3: WALLET BOX ========== -->
         <div class="sidebar-footer">
           <div class="wallet-box" id="walletBox">
             <button
@@ -248,15 +279,15 @@
             </button>
           </div>
         </div>
-        <!-- ====================================== -->
       </aside>
 
       <!-- ── Main Content ── -->
       <main class="main">
         <div class="net-bar">
           <div class="ndot"></div>
-          <strong>Ethereum Sepolia Testnet</strong>
-          <span class="sep">·</span> <span id="networkInfo">Not connected</span>
+          <strong id="networkName">Ethereum Sepolia Testnet</strong>
+          <span class="sep">·</span>
+          <span id="networkInfo">Not connected</span>
         </div>
 
         <div class="topbar">
@@ -316,15 +347,25 @@
           <div class="tab active" id="tab-create" onclick="show('create')">
             Create Invoice
           </div>
-          <div class="tab" id="tab-my-auction" onclick="show('my-auction')">
+          <div
+            class="tab"
+            id="tab-my-auction"
+            onclick="show('my-auction'); loadMyAuctions()"
+          >
             My Live Auction
           </div>
-          <div class="tab" id="tab-history" onclick="show('history')">
+          <div
+            class="tab"
+            id="tab-history"
+            onclick="show('history'); loadHistory()"
+          >
             Settled History
           </div>
         </div>
 
-        <!-- ── CREATE TAB ── -->
+        <!-- ══════════════════════════════════════════════════
+             TAB 1 — CREATE INVOICE
+        ══════════════════════════════════════════════════ -->
         <div id="v-create">
           <div class="content-grid">
             <!-- Invoice Form -->
@@ -388,7 +429,6 @@
                   </div>
                 </div>
 
-                <!-- ========== WEB3: CREATE INVOICE BUTTON ========== -->
                 <button
                   type="button"
                   class="btn btn-primary"
@@ -399,7 +439,7 @@
                   Create Invoice
                 </button>
 
-                <!-- Success Message -->
+                <!-- Success + Start Auction prompt -->
                 <div
                   id="successMessage"
                   style="display: none; margin-top: 16px"
@@ -409,20 +449,23 @@
                   <strong
                     >Invoice ID: <span id="createdInvoiceId"></span></strong
                   ><br />
-                  <span style="font-size: 11px"
-                    >Transaction:
+                  <span style="font-size: 11px">
+                    Transaction:
                     <a href="#" id="txLink" target="_blank" rel="noopener"
                       >View on Etherscan</a
-                    ></span
-                  >
+                    > </span
+                  ><br />
+                  <span style="font-size: 11px; color: var(--muted)">
+                    Admin must verify your invoice before you can start an
+                    auction. Once verified, go to
+                    <strong>My Live Auction</strong> tab to start bidding.
+                  </span>
                 </div>
-                <!-- ================================================ -->
               </div>
             </div>
 
             <!-- Sidebar -->
             <div style="display: flex; flex-direction: column; gap: 14px">
-              <!-- ========== WEB3: USDC BALANCE ========== -->
               <div class="card">
                 <div class="card-hd">
                   <div class="card-title">Your Balance</div>
@@ -453,69 +496,38 @@
                   </button>
                 </div>
               </div>
-              <!-- ======================================== -->
 
               <div class="card">
                 <div class="card-hd">
-                  <div class="card-title">Invoice Preview</div>
+                  <div class="card-title">How It Works</div>
                 </div>
                 <div class="card-bd">
-                  <div class="preview">
-                    <div class="prev-row">
-                      <span class="prev-lbl">Invoice #</span>
-                      <span class="prev-val ta">INV-2026-042</span>
-                    </div>
-                    <div class="prev-row">
-                      <span class="prev-lbl">Buyer</span>
-                      <span class="prev-val">Acme Corp</span>
-                    </div>
-                    <div class="prev-row">
-                      <span class="prev-lbl">Face Value</span>
-                      <span class="prev-val prev-val-green">$10,000 USDC</span>
-                    </div>
-                    <div class="prev-row">
-                      <span class="prev-lbl">Due Date</span>
-                      <span class="prev-val">18 May 2026</span>
-                    </div>
-                    <div class="prev-row">
-                      <span class="prev-lbl">Min Bid (90%)</span
-                      ><span class="prev-val prev-val-accent">$9,000 USDC</span>
+                  <div class="how-item">
+                    <div class="how-num">1</div>
+                    <div class="how-text">
+                      <strong>Create Invoice</strong> — register buyer address,
+                      face value and due date on-chain.
                     </div>
                   </div>
-                </div>
-              </div>
-              <div class="card">
-                <div class="card-hd">
-                  <div class="card-title">Your Metrics</div>
-                </div>
-                <div class="card-bd">
-                  <div class="stat2">
-                    <div class="stat2-box">
-                      <div class="stat2-lbl">Invoiced</div>
-                      <div
-                        class="stat2-val"
-                        style="color: var(--accent); font-size: 15px"
-                      >
-                        $284K
-                      </div>
+                  <div class="how-item">
+                    <div class="how-num">2</div>
+                    <div class="how-text">
+                      <strong>Admin verifies</strong> — invoice moves from
+                      PENDING → VERIFIED.
                     </div>
-                    <div class="stat2-box">
-                      <div class="stat2-lbl">Cash Out</div>
-                      <div
-                        class="stat2-val"
-                        style="color: var(--green); font-size: 15px"
-                      >
-                        $261K
-                      </div>
+                  </div>
+                  <div class="how-item">
+                    <div class="how-num">3</div>
+                    <div class="how-text">
+                      <strong>Start Auction</strong> — set minimum bid % and
+                      duration. LPs compete.
                     </div>
-                    <div class="stat2-box">
-                      <div class="stat2-lbl">Avg Rate</div>
-                      <div
-                        class="stat2-val"
-                        style="color: var(--yellow); font-size: 15px"
-                      >
-                        97.5%
-                      </div>
+                  </div>
+                  <div class="how-item">
+                    <div class="how-num">4</div>
+                    <div class="how-text">
+                      <strong>Settle &amp; receive</strong> — winning bid USDC
+                      lands in your wallet instantly.
                     </div>
                   </div>
                 </div>
@@ -524,242 +536,74 @@
           </div>
         </div>
 
-        <!-- ── MY AUCTION TAB ── -->
+        <!-- ══════════════════════════════════════════════════
+             TAB 2 — MY LIVE AUCTION
+        ══════════════════════════════════════════════════ -->
         <div id="v-my-auction" style="display: none">
-          <div class="content-grid">
-            <div class="card">
-              <div class="card-hd">
-                <div class="card-title">INV-2026-041 · Acme Corp</div>
-                <span class="tag tag-green">Auction Live</span>
+          <div id="auctionTabContent">
+            <!-- Populated by loadMyAuctions() -->
+            <div class="empty-state">
+              <div class="empty-state-icon">⏳</div>
+              <div class="empty-state-title">
+                Connect your wallet to load auctions
               </div>
-              <div class="card-bd">
-                <div class="live-box">
-                  <div style="display: flex; align-items: center; gap: 8px">
-                    <div class="wdot"></div>
-                    <div>
-                      <div class="live-label">AUCTION ENDS IN</div>
-                      <div class="live-timer" id="live-t">06:14:32</div>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="live-bid-lbl">Leading bid</div>
-                    <div class="live-bid-val">$9,750 USDC</div>
-                  </div>
-                </div>
-
-                <div class="metrics3">
-                  <div class="mbox">
-                    <div class="mlbl">Face Value</div>
-                    <div class="mval">$10,000</div>
-                  </div>
-                  <div class="mbox">
-                    <div class="mlbl">Min Bid</div>
-                    <div class="mval" style="color: var(--yellow)">$9,000</div>
-                  </div>
-                  <div class="mbox">
-                    <div class="mlbl">Bids</div>
-                    <div class="mval" style="color: var(--accent)">3</div>
-                  </div>
-                </div>
-
-                <div
-                  style="font-size: 13px; font-weight: 600; margin-bottom: 12px"
-                >
-                  Current Bids
-                </div>
-
-                <div class="bid-row">
-                  <div class="bid-rank r1">1</div>
-                  <div style="flex: 1">
-                    <div class="bid-addr">0x7F3a...b9C2</div>
-                    <div class="bid-time">2 min ago · 0xa4f2...8b1c</div>
-                  </div>
-                  <div style="text-align: right">
-                    <div class="bid-amount" style="color: var(--green)">
-                      $9,750
-                    </div>
-                    <div><span class="badge badge-green">Leading</span></div>
-                  </div>
-                </div>
-                <div class="bid-row">
-                  <div class="bid-rank r2">2</div>
-                  <div style="flex: 1">
-                    <div class="bid-addr">0x2D8b...f1A4</div>
-                    <div class="bid-time">3 min ago · 0xc8d1...2f4a</div>
-                  </div>
-                  <div style="text-align: right">
-                    <div class="bid-amount tm">$9,700</div>
-                    <div>
-                      <span class="badge badge-gray">Outbid · Refunded</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="bid-row">
-                  <div class="bid-rank r3">3</div>
-                  <div style="flex: 1">
-                    <div class="bid-addr">0x9E1c...d4B8</div>
-                    <div class="bid-time">4 min ago · 0xf2a9...1c3e</div>
-                  </div>
-                  <div style="text-align: right">
-                    <div class="bid-amount tm">$9,500</div>
-                    <div>
-                      <span class="badge badge-gray">Outbid · Refunded</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="success-box">
-                  When auction closes, <strong>$9,750 USDC</strong> will be
-                  released to your wallet automatically.
-                </div>
-              </div>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 14px">
-              <div class="card">
-                <div class="card-hd">
-                  <div class="card-title">Invoice Summary</div>
-                </div>
-                <div class="card-bd">
-                  <div class="preview" style="margin-top: 0">
-                    <div class="prev-row">
-                      <span class="prev-lbl">Invoice ID</span>
-                      <span class="prev-val ta">INV-2026-041</span>
-                    </div>
-                    <div class="prev-row">
-                      <span class="prev-lbl">Buyer</span>
-                      <span class="prev-val">Acme Corp</span>
-                    </div>
-                    <div class="prev-row">
-                      <span class="prev-lbl">Face Value</span>
-                      <span class="prev-val prev-val-green">$10,000 USDC</span>
-                    </div>
-                    <div class="prev-row">
-                      <span class="prev-lbl">Due Date</span>
-                      <span class="prev-val">18 May 2026</span>
-                    </div>
-                    <div class="prev-row">
-                      <span class="prev-lbl">Days to Due</span>
-                      <span class="prev-val">61 days</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="card">
-                <div class="card-hd">
-                  <div class="card-title">Estimated Payout</div>
-                </div>
-                <div class="card-bd" style="text-align: center; padding: 20px">
-                  <div
-                    style="
-                      font-size: 11px;
-                      color: var(--muted);
-                      margin-bottom: 8px;
-                    "
-                  >
-                    YOU WILL RECEIVE
-                  </div>
-                  <div
-                    style="
-                      font-size: 32px;
-                      font-weight: 600;
-                      color: var(--green);
-                    "
-                  >
-                    $9,750
-                  </div>
-                  <div
-                    style="
-                      font-size: 11px;
-                      color: var(--muted);
-                      margin-top: 6px;
-                    "
-                  >
-                    97.5% recovery · at auction close
-                  </div>
-                  <div
-                    style="
-                      background: var(--bg);
-                      border-radius: 7px;
-                      padding: 10px;
-                      margin-top: 14px;
-                      font-size: 12px;
-                      color: var(--muted);
-                    "
-                  >
-                    Cash in hand
-                    <strong style="color: var(--text)">today</strong> instead of
-                    waiting
-                    <strong style="color: var(--yellow)">61 days</strong>
-                  </div>
-                </div>
+              <div class="empty-state-sub">
+                Your verified invoices and live auctions will appear here.
               </div>
             </div>
           </div>
         </div>
 
-        <!-- ── HISTORY TAB ── -->
+        <!-- ══════════════════════════════════════════════════
+             TAB 3 — SETTLED HISTORY
+        ══════════════════════════════════════════════════ -->
         <div id="v-history" style="display: none">
           <div class="card">
             <div class="card-hd">
               <div class="card-title">Settled Invoices</div>
-              <span style="font-size: 12px; color: var(--muted)"
-                >7 invoices · $261,505 total</span
+              <span
+                id="historyCount"
+                style="font-size: 12px; color: var(--muted)"
+                >Loading...</span
               >
             </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Invoice</th>
-                  <th>Buyer</th>
-                  <th>Face Value</th>
-                  <th>Received</th>
-                  <th>Recovery</th>
-                  <th>Settled</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><span class="mono ta">INV-2026-038</span></td>
-                  <td>GlobalTrade SG</td>
-                  <td class="tg">$18,500</td>
-                  <td class="tg">$17,945</td>
-                  <td>97.0%</td>
-                  <td class="tm">01 Mar 2026</td>
-                </tr>
-                <tr>
-                  <td><span class="mono ta">INV-2026-035</span></td>
-                  <td>Harbour Partners</td>
-                  <td class="tg">$42,000</td>
-                  <td class="tg">$40,740</td>
-                  <td>97.0%</td>
-                  <td class="tm">14 Feb 2026</td>
-                </tr>
-                <tr>
-                  <td><span class="mono ta">INV-2026-031</span></td>
-                  <td>NexGen Systems</td>
-                  <td class="tg">$15,000</td>
-                  <td class="tg">$14,625</td>
-                  <td>97.5%</td>
-                  <td class="tm">28 Jan 2026</td>
-                </tr>
-                <tr>
-                  <td><span class="mono ta">INV-2026-028</span></td>
-                  <td>Pinnacle Corp</td>
-                  <td class="tg">$22,000</td>
-                  <td class="tg">$21,340</td>
-                  <td>97.0%</td>
-                  <td class="tm">12 Jan 2026</td>
-                </tr>
-              </tbody>
-            </table>
+            <div id="historyTableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Invoice ID</th>
+                    <th>Buyer</th>
+                    <th>Face Value</th>
+                    <th>Received</th>
+                    <th>Recovery %</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                  <tr>
+                    <td
+                      colspan="6"
+                      style="
+                        text-align: center;
+                        padding: 30px;
+                        color: var(--muted);
+                      "
+                    >
+                      Connect wallet to load history
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </main>
     </div>
 
     <script>
-      // ========== EXISTING TAB SWITCHING (KEEP) ==========
+      // ══════════════════════════════════════════════════
+      // TAB SWITCHING
+      // ══════════════════════════════════════════════════
       function show(name) {
         ["create", "my-auction", "history"].forEach((n) => {
           document.getElementById("v-" + n).style.display =
@@ -770,122 +614,109 @@
         });
       }
 
-      // ========== EXISTING TIMER (KEEP) ==========
-      let s = 6 * 3600 + 14 * 60 + 32;
-      setInterval(() => {
-        if (s > 0) s--;
-        const pad = (n) => String(n).padStart(2, "0");
-        const el = document.getElementById("live-t");
-        if (el)
-          el.textContent = `${pad(Math.floor(s / 3600))}:${pad(
-            Math.floor((s % 3600) / 60),
-          )}:${pad(s % 60)}`;
-      }, 1000);
-
-      // ========== NEW WEB3 CODE ==========
-
+      // ══════════════════════════════════════════════════
+      // WALLET STATE
+      // ══════════════════════════════════════════════════
       let userWallet = null;
 
-      // Connect MetaMask
-      async function connectMetaMask() {
+      // silent=true when called from auto-connect on load — suppresses the notification
+      async function connectMetaMask(silent = false) {
         try {
           const connectBtn = document.getElementById("connectBtn");
-          connectBtn.textContent = "Connecting...";
-          connectBtn.disabled = true;
+          if (!silent) {
+            connectBtn.textContent = "Connecting...";
+            connectBtn.disabled = true;
+          }
 
           const wallet = await web3Utils.connectWallet();
           userWallet = wallet;
 
-          // Update wallet box UI
           document.getElementById("walletBox").innerHTML = `
-      <div class="wallet-status"><div class="wdot"></div> MetaMask Connected</div>
-      <div class="wallet-addr">${wallet.shortAddress} · Sepolia</div>
-    `;
-
-          // Update network info
+            <div class="wallet-status"><div class="wdot"></div> MetaMask Connected</div>
+            <div class="wallet-addr">${wallet.shortAddress} · Sepolia</div>
+          `;
           document.getElementById(
             "networkInfo",
           ).textContent = `Connected: ${wallet.shortAddress}`;
 
-          // Load USDC balance
           await updateBalance();
-
-          web3Utils.showNotification(
-            "Wallet connected successfully!",
-            "success",
-          );
+          if (!silent)
+            web3Utils.showNotification(
+              "Wallet connected successfully!",
+              "success",
+            );
         } catch (error) {
           console.error("Connection error:", error);
-          web3Utils.showNotification(
-            "Failed to connect: " + error.message,
-            "error",
-          );
-          document.getElementById("connectBtn").textContent =
-            "Connect MetaMask";
-          document.getElementById("connectBtn").disabled = false;
+          if (!silent)
+            web3Utils.showNotification(
+              "Failed to connect: " + error.message,
+              "error",
+            );
+          const connectBtn = document.getElementById("connectBtn");
+          connectBtn.textContent = "Connect MetaMask";
+          connectBtn.disabled = false;
         }
       }
 
-      // Update USDC balance
       async function updateBalance() {
         try {
           const balance = await web3Utils.getUSDCBalance();
           document.getElementById("usdcBalance").textContent =
             web3Utils.formatUSDC(balance);
         } catch (error) {
-          console.error("Balance error:", error);
           document.getElementById("usdcBalance").textContent = "Error";
         }
       }
 
-      // Claim test USDC from faucet
+      // ══════════════════════════════════════════════════
+      // FAUCET
+      // ══════════════════════════════════════════════════
       async function claimFaucet() {
         if (!userWallet) {
           web3Utils.showNotification("Please connect MetaMask first", "error");
           return;
         }
-
         try {
-          const faucetBtn = document.getElementById("faucetBtn");
-          faucetBtn.textContent = "Claiming...";
-          faucetBtn.disabled = true;
+          const btn = document.getElementById("faucetBtn");
+          btn.textContent = "Claiming...";
+          btn.disabled = true;
 
-          const txHash = await web3Utils.claimTestUSDC();
-          web3Utils.showNotification(
-            "1000 USDC claimed! Transaction confirmed.",
-            "success",
-          );
-
+          await web3Utils.claimTestUSDC();
+          web3Utils.showNotification("1,000 USDC claimed!", "success");
           await updateBalance();
 
-          faucetBtn.textContent = "Claimed!";
+          btn.textContent = "Claimed!";
           setTimeout(() => {
-            faucetBtn.textContent = "Claim Test USDC";
-            faucetBtn.disabled = false;
+            btn.textContent = "Claim Test USDC";
+            btn.disabled = false;
           }, 3000);
         } catch (error) {
-          console.error("Faucet error:", error);
-          web3Utils.showNotification(
-            "Faucet claim failed: " + error.message,
-            "error",
-          );
-          document.getElementById("faucetBtn").textContent = "Claim Test USDC";
-          document.getElementById("faucetBtn").disabled = false;
+          // Give a specific message if the user already has enough USDC
+          const msg = error.message.includes("enough USDC")
+            ? "You already have enough test USDC (max 10,000)"
+            : "Faucet claim failed: " + error.message;
+          web3Utils.showNotification(msg, "error");
+          const btn = document.getElementById("faucetBtn");
+          btn.textContent = "Claim Test USDC";
+          btn.disabled = false;
         }
       }
 
-      // Handle invoice creation
+      // ══════════════════════════════════════════════════
+      // CREATE INVOICE
+      // ══════════════════════════════════════════════════
       async function handleCreateInvoice() {
         if (!userWallet) {
           web3Utils.showNotification("Please connect MetaMask first", "error");
           return;
         }
 
-        const buyerAddress = document.getElementById("buyerAddress").value;
+        const buyerAddress = document
+          .getElementById("buyerAddress")
+          .value.trim();
         const faceValue = document.getElementById("faceValue").value;
         const daysUntilDue = document.getElementById("daysUntilDue").value;
 
-        // Validate inputs
         if (!buyerAddress || !faceValue || !daysUntilDue) {
           web3Utils.showNotification(
             "Please fill all required fields",
@@ -894,8 +725,9 @@
           return;
         }
 
+        // Fixed: ethers.isAddress() is correct v6 top-level API
         if (!ethers.isAddress(buyerAddress)) {
-          web3Utils.showNotification("Invalid buyer address", "error");
+          web3Utils.showNotification("Invalid buyer wallet address", "error");
           return;
         }
 
@@ -907,19 +739,25 @@
           return;
         }
 
+        if (parseInt(daysUntilDue) < 1) {
+          web3Utils.showNotification(
+            "Due date must be at least 1 day from now",
+            "error",
+          );
+          return;
+        }
+
         try {
           const btn = document.getElementById("createInvoiceBtn");
-          btn.textContent = "Creating Invoice...";
+          btn.textContent = "Awaiting MetaMask...";
           btn.disabled = true;
 
-          // Create invoice on blockchain
           const result = await web3Utils.createInvoice(
             buyerAddress,
             faceValue,
             daysUntilDue,
           );
 
-          // Show success message
           document.getElementById("createdInvoiceId").textContent =
             result.invoiceId;
           document.getElementById(
@@ -928,17 +766,14 @@
           document.getElementById("successMessage").style.display = "block";
 
           web3Utils.showNotification(
-            `Invoice #${result.invoiceId} created successfully!`,
+            `Invoice #${result.invoiceId} created! Awaiting admin verification.`,
             "success",
           );
 
-          // Reset button
           btn.textContent = "Invoice Created!";
           setTimeout(() => {
             btn.textContent = "Create Invoice";
             btn.disabled = false;
-            // Optionally hide success message after some time
-            // setTimeout(() => document.getElementById('successMessage').style.display = 'none', 5000);
           }, 3000);
         } catch (error) {
           console.error("Invoice creation error:", error);
@@ -946,21 +781,516 @@
             "Failed to create invoice: " + error.message,
             "error",
           );
-          document.getElementById("createInvoiceBtn").textContent =
-            "Create Invoice";
-          document.getElementById("createInvoiceBtn").disabled = false;
+          const btn = document.getElementById("createInvoiceBtn");
+          btn.textContent = "Create Invoice";
+          btn.disabled = false;
         }
       }
 
-      // Auto-connect on page load if previously connected
+      // ══════════════════════════════════════════════════
+      // MY LIVE AUCTION TAB — load verified invoices
+      // and any active auction for this seller
+      // ══════════════════════════════════════════════════
+      async function loadMyAuctions() {
+        if (!userWallet) {
+          document.getElementById("auctionTabContent").innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">🔒</div>
+              <div class="empty-state-title">Wallet not connected</div>
+              <div class="empty-state-sub">Connect MetaMask to see your invoices and auctions.</div>
+            </div>`;
+          return;
+        }
+
+        document.getElementById("auctionTabContent").innerHTML = `
+          <div style="padding:30px; text-align:center; color:var(--muted)">Loading your invoices...</div>`;
+
+        try {
+          const invoices = await web3Utils.getUserInvoices();
+
+          // Separate invoices by status
+          const verified = invoices.filter((inv) => inv.status === "VERIFIED");
+          const auctioned = invoices.filter(
+            (inv) => inv.status === "AUCTIONED",
+          );
+          const settled = invoices.filter((inv) => inv.status === "SETTLED");
+
+          let html = "";
+
+          // ── Active auctions (can settle) ──────────────────
+          if (auctioned.length > 0) {
+            for (const inv of auctioned) {
+              try {
+                const auction = await web3Utils.getAuctionByInvoice(inv.id);
+                html += buildLiveAuctionCard(inv, auction);
+              } catch (e) {
+                console.error("Error loading auction for invoice", inv.id, e);
+              }
+            }
+          }
+
+          // ── Settled invoices waiting for escrow ───────────
+          if (settled.length > 0) {
+            html += `<div style="margin-top:16px">`;
+            for (const inv of settled) {
+              html += buildSettledCard(inv);
+            }
+            html += `</div>`;
+          }
+
+          // ── Verified invoices ready to auction ────────────
+          if (verified.length > 0) {
+            html += `
+              <div class="card" style="margin-top:16px">
+                <div class="card-hd">
+                  <div class="card-title">Verified Invoices — Ready to Auction</div>
+                  <span class="tag tag-green">${verified.length} ready</span>
+                </div>
+                <div class="card-bd">`;
+            for (const inv of verified) {
+              html += buildStartAuctionForm(inv);
+            }
+            html += `</div></div>`;
+          }
+
+          // ── Nothing to show ───────────────────────────────
+          if (
+            auctioned.length === 0 &&
+            verified.length === 0 &&
+            settled.length === 0
+          ) {
+            html = `
+              <div class="empty-state">
+                <div class="empty-state-icon">📄</div>
+                <div class="empty-state-title">No invoices ready yet</div>
+                <div class="empty-state-sub">
+                  Create an invoice first, then wait for admin verification before starting an auction.
+                </div>
+              </div>`;
+          }
+
+          document.getElementById("auctionTabContent").innerHTML = html;
+
+          // Start live timers for any auctioned invoices
+          auctioned.forEach(async (inv) => {
+            try {
+              const auction = await web3Utils.getAuctionByInvoice(inv.id);
+              startLiveTimer(auction.id, auction.timeRemaining);
+            } catch (e) {}
+          });
+        } catch (error) {
+          console.error("Error loading auctions:", error);
+          document.getElementById("auctionTabContent").innerHTML = `
+            <div style="padding:30px; text-align:center; color:var(--red)">
+              Error loading data: ${error.message}
+            </div>`;
+        }
+      }
+
+      // Build a live auction card with settle button
+      function buildLiveAuctionCard(inv, auction) {
+        const isEnded = auction.timeRemaining <= 0;
+        const hasNoBids =
+          auction.highestBidder ===
+          "0x0000000000000000000000000000000000000000";
+        const payout = hasNoBids
+          ? "—"
+          : web3Utils.formatUSDC(auction.highestBid);
+
+        return `
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-hd">
+              <div class="card-title">Invoice #${
+                inv.id
+              } · ${web3Utils.formatUSDC(inv.faceValue)}</div>
+              <span class="tag ${isEnded ? "tag-yellow" : "tag-green"}">${
+          isEnded ? "Ended — Settle Now" : "Auction Live"
+        }</span>
+            </div>
+            <div class="card-bd">
+              <div class="live-box">
+                <div style="display:flex; align-items:center; gap:8px">
+                  <div class="${isEnded ? "" : "wdot"}"></div>
+                  <div>
+                    <div class="live-label">${
+                      isEnded ? "AUCTION ENDED" : "AUCTION ENDS IN"
+                    }</div>
+                    <div class="live-timer" id="live-timer-${
+                      auction.id
+                    }">--:--:--</div>
+                  </div>
+                </div>
+                <div>
+                  <div class="live-bid-lbl">${
+                    hasNoBids ? "No bids yet" : "Leading bid"
+                  }</div>
+                  <div class="live-bid-val">${payout}</div>
+                </div>
+              </div>
+
+              <div class="metrics3">
+                <div class="mbox">
+                  <div class="mlbl">Face Value</div>
+                  <div class="mval">${web3Utils.formatUSDC(inv.faceValue)}</div>
+                </div>
+                <div class="mbox">
+                  <div class="mlbl">Min Bid</div>
+                  <div class="mval" style="color:var(--yellow)">${web3Utils.formatUSDC(
+                    auction.minBid,
+                  )}</div>
+                </div>
+                <div class="mbox">
+                  <div class="mlbl">Due Date</div>
+                  <div class="mval" style="font-size:12px">${inv.dueDate.toLocaleDateString()}</div>
+                </div>
+              </div>
+
+              ${
+                isEnded && !hasNoBids
+                  ? `
+                <button class="btn btn-primary" style="width:100%" onclick="handleSettle(${
+                  auction.id
+                })" id="settle-btn-${auction.id}">
+                  Settle Auction — Receive ${web3Utils.formatUSDC(
+                    auction.highestBid,
+                  )} USDC
+                </button>
+                <div style="font-size:11px; color:var(--muted); text-align:center; margin-top:8px">
+                  Anyone can trigger settlement — funds go directly to your wallet
+                </div>
+              `
+                  : isEnded && hasNoBids
+                  ? `
+                <button class="btn btn-outline" style="width:100%" onclick="handleCancel(${auction.id})" id="cancel-btn-${auction.id}">
+                  Cancel Auction (No Bids)
+                </button>
+              `
+                  : `
+                <div class="success-box" style="margin-top:0">
+                  When auction closes, <strong>${payout}</strong> USDC will be released to your wallet.
+                </div>
+              `
+              }
+            </div>
+          </div>`;
+      }
+
+      // Build a card for settled invoice (LP needs to create escrow)
+      function buildSettledCard(inv) {
+        return `
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-hd">
+              <div class="card-title">Invoice #${inv.id} · Auction Settled</div>
+              <span class="tag tag-green">Settled</span>
+            </div>
+            <div class="card-bd">
+              <div style="font-size:13px; color:var(--muted)">
+                Face value: <strong>${web3Utils.formatUSDC(
+                  inv.faceValue,
+                )}</strong> ·
+                Due: <strong>${inv.dueDate.toLocaleDateString()}</strong>
+              </div>
+              <div style="font-size:12px; color:var(--muted); margin-top:8px">
+                The winning LP now owns this invoice and should create an escrow for buyer payment.
+              </div>
+            </div>
+          </div>`;
+      }
+
+      // Build start-auction form for a verified invoice
+      function buildStartAuctionForm(inv) {
+        return `
+          <div style="border-bottom:1px solid var(--border); padding-bottom:18px; margin-bottom:18px">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+              <div>
+                <div style="font-weight:600; font-size:14px">Invoice #${
+                  inv.id
+                }</div>
+                <div style="font-size:12px; color:var(--muted)">
+                  Face value: ${web3Utils.formatUSDC(
+                    inv.faceValue,
+                  )} · Due: ${inv.dueDate.toLocaleDateString()}
+                </div>
+              </div>
+              <span class="tag tag-green">VERIFIED</span>
+            </div>
+            <div class="auction-form-grid">
+              <div class="field">
+                <label>Min Bid % (of face value)</label>
+                <input type="number" id="minPct-${
+                  inv.id
+                }" value="90" min="1" max="100"
+                  placeholder="90" />
+                <span class="input-hint">e.g. 90 = min bid of ${web3Utils.formatUSDC(
+                  parseFloat(inv.faceValue) * 0.9,
+                )}</span>
+              </div>
+              <div class="field">
+                <label>Duration (hours)</label>
+                <input type="number" id="duration-${
+                  inv.id
+                }" value="24" min="1" max="168"
+                  placeholder="24" />
+                <span class="input-hint">Min 1 hour · Max 7 days (168 hrs)</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" style="width:100%"
+              onclick="handleStartAuction(${inv.id})"
+              id="start-auction-btn-${inv.id}">
+              Start Auction for Invoice #${inv.id}
+            </button>
+          </div>`;
+      }
+
+      // ══════════════════════════════════════════════════
+      // START AUCTION
+      // ══════════════════════════════════════════════════
+      async function handleStartAuction(invoiceId) {
+        if (!userWallet) {
+          web3Utils.showNotification("Please connect MetaMask first", "error");
+          return;
+        }
+
+        const minPct = parseInt(
+          document.getElementById(`minPct-${invoiceId}`).value,
+        );
+        const duration = parseInt(
+          document.getElementById(`duration-${invoiceId}`).value,
+        );
+
+        if (!minPct || minPct < 1 || minPct > 100) {
+          web3Utils.showNotification(
+            "Min bid must be between 1% and 100%",
+            "error",
+          );
+          return;
+        }
+        if (!duration || duration < 1 || duration > 168) {
+          web3Utils.showNotification(
+            "Duration must be between 1 and 168 hours",
+            "error",
+          );
+          return;
+        }
+
+        try {
+          const btn = document.getElementById(`start-auction-btn-${invoiceId}`);
+          btn.textContent = "Awaiting MetaMask...";
+          btn.disabled = true;
+
+          const result = await web3Utils.startAuction(
+            invoiceId,
+            minPct,
+            duration,
+          );
+
+          web3Utils.showNotification(
+            `Auction #${result.auctionId} started for Invoice #${invoiceId}!`,
+            "success",
+          );
+
+          // Reload the tab to reflect new state
+          await loadMyAuctions();
+        } catch (error) {
+          console.error("Start auction error:", error);
+          web3Utils.showNotification(
+            "Failed to start auction: " + error.message,
+            "error",
+          );
+          const btn = document.getElementById(`start-auction-btn-${invoiceId}`);
+          if (btn) {
+            btn.textContent = `Start Auction for Invoice #${invoiceId}`;
+            btn.disabled = false;
+          }
+        }
+      }
+
+      // ══════════════════════════════════════════════════
+      // SETTLE AUCTION
+      // ══════════════════════════════════════════════════
+      async function handleSettle(auctionId) {
+        if (!userWallet) {
+          web3Utils.showNotification("Please connect MetaMask first", "error");
+          return;
+        }
+        try {
+          const btn = document.getElementById(`settle-btn-${auctionId}`);
+          btn.textContent = "Settling — Awaiting MetaMask...";
+          btn.disabled = true;
+
+          await web3Utils.settleAuction(auctionId);
+          web3Utils.showNotification(
+            "Auction settled! USDC sent to your wallet.",
+            "success",
+          );
+
+          await updateBalance();
+          await loadMyAuctions(); // Reload to show updated state
+        } catch (error) {
+          console.error("Settle error:", error);
+          web3Utils.showNotification(
+            "Settle failed: " + error.message,
+            "error",
+          );
+          const btn = document.getElementById(`settle-btn-${auctionId}`);
+          if (btn) {
+            btn.textContent = "Settle Auction";
+            btn.disabled = false;
+          }
+        }
+      }
+
+      // ══════════════════════════════════════════════════
+      // CANCEL AUCTION
+      // ══════════════════════════════════════════════════
+      async function handleCancel(auctionId) {
+        if (!userWallet) {
+          web3Utils.showNotification("Please connect MetaMask first", "error");
+          return;
+        }
+        try {
+          const btn = document.getElementById(`cancel-btn-${auctionId}`);
+          btn.textContent = "Cancelling...";
+          btn.disabled = true;
+
+          await web3Utils.cancelAuction(auctionId);
+          web3Utils.showNotification(
+            "Auction cancelled. Invoice returned to VERIFIED.",
+            "success",
+          );
+          await loadMyAuctions();
+        } catch (error) {
+          console.error("Cancel error:", error);
+          web3Utils.showNotification(
+            "Cancel failed: " + error.message,
+            "error",
+          );
+          const btn = document.getElementById(`cancel-btn-${auctionId}`);
+          if (btn) {
+            btn.textContent = "Cancel Auction (No Bids)";
+            btn.disabled = false;
+          }
+        }
+      }
+
+      // ══════════════════════════════════════════════════
+      // HISTORY TAB — load settled invoices from chain
+      // ══════════════════════════════════════════════════
+      async function loadHistory() {
+        if (!userWallet) {
+          document.getElementById("historyTableBody").innerHTML = `
+            <tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted)">
+              Connect wallet to load history
+            </td></tr>`;
+          document.getElementById("historyCount").textContent = "";
+          return;
+        }
+
+        document.getElementById("historyTableBody").innerHTML = `
+          <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted)">
+            Loading...
+          </td></tr>`;
+
+        try {
+          const invoices = await web3Utils.getUserInvoices();
+          const done = invoices.filter(
+            (inv) => inv.status === "SETTLED" || inv.status === "PAID",
+          );
+
+          document.getElementById("historyCount").textContent = `${
+            done.length
+          } invoice${done.length !== 1 ? "s" : ""}`;
+
+          if (done.length === 0) {
+            document.getElementById("historyTableBody").innerHTML = `
+              <tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted)">
+                No settled invoices yet.
+              </td></tr>`;
+            return;
+          }
+
+          // For each settled invoice try to get the auction to show received amount
+          const rows = await Promise.all(
+            done.map(async (inv) => {
+              let received = "—";
+              let recoveryPct = "—";
+              try {
+                const auction = await web3Utils.getAuctionByInvoice(inv.id);
+                if (auction && parseFloat(auction.highestBid) > 0) {
+                  received = web3Utils.formatUSDC(auction.highestBid);
+                  recoveryPct =
+                    (
+                      (parseFloat(auction.highestBid) /
+                        parseFloat(inv.faceValue)) *
+                      100
+                    ).toFixed(1) + "%";
+                }
+              } catch (e) {
+                /* auction data unavailable */
+              }
+
+              return `
+              <tr>
+                <td><span class="mono ta">#${inv.id}</span></td>
+                <td>${inv.buyer.slice(0, 6)}...${inv.buyer.slice(-4)}</td>
+                <td class="tg">${web3Utils.formatUSDC(inv.faceValue)}</td>
+                <td class="tg">${received}</td>
+                <td>${recoveryPct}</td>
+                <td><span class="badge ${getStatusBadgeClass(inv.status)}">${
+                inv.status
+              }</span></td>
+              </tr>`;
+            }),
+          );
+
+          document.getElementById("historyTableBody").innerHTML = rows.join("");
+        } catch (error) {
+          console.error("History load error:", error);
+          document.getElementById("historyTableBody").innerHTML = `
+            <tr><td colspan="6" style="text-align:center; padding:30px; color:var(--red)">
+              Error loading history: ${error.message}
+            </td></tr>`;
+        }
+      }
+
+      // ══════════════════════════════════════════════════
+      // LIVE AUCTION COUNTDOWN TIMER
+      // ══════════════════════════════════════════════════
+      const activeTimers = {};
+
+      function startLiveTimer(auctionId, seconds) {
+        // Clear any existing timer for this auction
+        if (activeTimers[auctionId]) clearInterval(activeTimers[auctionId]);
+
+        let s = seconds;
+        const el = document.getElementById(`live-timer-${auctionId}`);
+        if (!el) return;
+
+        const pad = (n) => String(n).padStart(2, "0");
+        const tick = () => {
+          if (s <= 0) {
+            el.textContent = "00:00:00";
+            clearInterval(activeTimers[auctionId]);
+            return;
+          }
+          el.textContent = `${pad(Math.floor(s / 3600))}:${pad(
+            Math.floor((s % 3600) / 60),
+          )}:${pad(s % 60)}`;
+          s--;
+        };
+        tick();
+        activeTimers[auctionId] = setInterval(tick, 1000);
+      }
+
+      // ══════════════════════════════════════════════════
+      // AUTO-CONNECT ON LOAD
+      // ══════════════════════════════════════════════════
       window.addEventListener("load", async () => {
         if (typeof window.ethereum !== "undefined") {
           const accounts = await window.ethereum.request({
             method: "eth_accounts",
           });
-          if (accounts.length > 0) {
-            await connectMetaMask();
-          }
+          if (accounts.length > 0) await connectMetaMask(true); // silent — no notification
         }
       });
     </script>
