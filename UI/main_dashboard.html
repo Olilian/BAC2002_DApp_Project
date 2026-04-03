@@ -852,7 +852,10 @@
           return;
         }
 
-        tbody.innerHTML = invoices
+        // Sort by createdAt descending (newest first)
+        const sortedInvoices = invoices.sort((a, b) => b.createdAt - a.createdAt);
+
+        tbody.innerHTML = sortedInvoices
           .slice(0, 5)
           .map(
             (invoice) => `

@@ -136,9 +136,9 @@ function parseUSDC(amount) {
 }
 
 // ─── Create invoice ──────────────────────────────────────────────────────────
-async function createInvoice(buyerAddress, faceValue, daysUntilDue) {
+async function createInvoice(buyerAddress, faceValue, minutesUntilDue) {
   const faceValueWei = parseUSDC(faceValue);
-  const dueDate = Math.floor(Date.now() / 1000) + (daysUntilDue * 24 * 60 * 60);
+  const dueDate = Math.floor(Date.now() / 1000) + (minutesUntilDue * 60);
 
   const tx = await contracts.registry.createInvoice(buyerAddress, faceValueWei, dueDate);
   const receipt = await tx.wait();
@@ -162,6 +162,7 @@ async function createInvoice(buyerAddress, faceValue, daysUntilDue) {
 
   return { txHash: tx.hash };
 }
+
 
 // ─── Get invoice details ─────────────────────────────────────────────────────
 async function getInvoice(invoiceId) {
@@ -305,6 +306,22 @@ async function payInvoice(invoiceId, amount) {
   }
 
   const tx = await contracts.escrow.payInvoice(invoiceId);
+  await tx.wait();
+  return tx.hash;
+}
+
+// ─── Auto pay invoice by anyone when due (buyer must have granted allowance) ────
+async function payInvoiceAuto(invoiceId) {
+  const escrow = await getEscrow(invoiceId);
+  const amountWei = parseUSDC(escrow.amount);
+
+  // Ensure EscrowManager has sufficient allowance from the buyer
+  const allowance = await contracts.usdc.allowance(escrow.buyer, CONTRACT_ADDRESSES.EscrowManager);
+  if (allowance < amountWei) {
+    throw new Error("Buyer has not approved EscrowManager for payment amount");
+  }
+
+  const tx = await contracts.escrow.payInvoiceAuto(invoiceId);
   await tx.wait();
   return tx.hash;
 }
