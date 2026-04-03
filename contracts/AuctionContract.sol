@@ -60,8 +60,7 @@ contract AuctionContract is ReentrancyGuard {
         uint256 duration
     ) external returns (uint256) {
         require(minBidPercentage > 0 && minBidPercentage <= 100, "Invalid min bid percentage");
-        require(duration >= 1 minutes && duration <= 7 days, "Duration must be 1min-7d");
-        require(invoiceRegistry.canAuction(invoiceId), "Invoice not ready for auction");
+ require(duration >= 1 minutes && duration <= 7 days, "Duration must be 1min-7d");        require(invoiceRegistry.canAuction(invoiceId), "Invoice not ready for auction");
         
         InvoiceRegistry.Invoice memory invoice = invoiceRegistry.getInvoice(invoiceId);
         require(invoice.seller == msg.sender, "Only seller can start auction");

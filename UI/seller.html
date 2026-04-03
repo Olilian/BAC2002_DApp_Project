@@ -416,16 +416,16 @@
                     />
                   </div>
                   <div class="field">
-                    <label>Days Until Due *</label>
+                    <label>Minutes Until Due *</label>
                     <input
                       type="number"
-                      id="daysUntilDue"
-                      value="60"
+                      id="minutesUntilDue"
+                      value="1440"
                       min="1"
-                      max="365"
+                      max="525600"
                       required
                     />
-                    <span class="input-hint">Typical: 30, 60, or 90 days</span>
+                    <span class="input-hint">Demo: 5-60 min · Production: 1440+ min (1+ day)</span>
                   </div>
                 </div>
 
@@ -715,9 +715,9 @@
           .getElementById("buyerAddress")
           .value.trim();
         const faceValue = document.getElementById("faceValue").value;
-        const daysUntilDue = document.getElementById("daysUntilDue").value;
+        const minutesUntilDue = document.getElementById("minutesUntilDue").value;
 
-        if (!buyerAddress || !faceValue || !daysUntilDue) {
+        if (!buyerAddress || !faceValue || !minutesUntilDue) {
           web3Utils.showNotification(
             "Please fill all required fields",
             "error",
@@ -739,9 +739,9 @@
           return;
         }
 
-        if (parseInt(daysUntilDue) < 1) {
+        if (parseInt(minutesUntilDue) < 1) {
           web3Utils.showNotification(
-            "Due date must be at least 1 day from now",
+            "Due date must be at least 1 minute from now",
             "error",
           );
           return;
@@ -755,7 +755,7 @@
           const result = await web3Utils.createInvoice(
             buyerAddress,
             faceValue,
-            daysUntilDue,
+            minutesUntilDue,
           );
 
           document.getElementById("createdInvoiceId").textContent =
@@ -1026,13 +1026,12 @@
                 )}</span>
               </div>
               <div class="field">
-                <label>Duration (hours)</label>
-                <input type="number" id="duration-${
+                <label>Duration (minutes)</label>
+                 <input type="number" id="duration-${
                   inv.id
-                }" value="24" min="1" max="168"
-                  placeholder="24" />
-                <span class="input-hint">Min 1 hour · Max 7 days (168 hrs)</span>
-              </div>
+                }" value="60" min="1" max="10080"
+                  placeholder="60" />
+                <span class="input-hint">Min 1 minute · Max 7 days (10080 mins)</span>
             </div>
             <button class="btn btn-primary" style="width:100%"
               onclick="handleStartAuction(${inv.id})"
@@ -1065,9 +1064,9 @@
           );
           return;
         }
-        if (!duration || duration < 1 || duration > 168) {
+        if (!duration || duration < 1 || duration > 10080) {
           web3Utils.showNotification(
-            "Duration must be between 1 and 168 hours",
+            "Duration must be between 1 and 10080 minutes (7 days)",
             "error",
           );
           return;

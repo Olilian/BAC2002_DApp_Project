@@ -11,7 +11,6 @@ describe("Invoice Factoring System", function () {
   const MIN_BID_PERCENT = 90; // 90%
   const AUCTION_DURATION = 5 * 60; // 5 minutes for demo
   const DUE_DATE_OFFSET = 10 * 60; // 10 minutes for demo
-  
   beforeEach(async function () {
     [owner, seller, buyer, lp1, lp2] = await ethers.getSigners();
     
