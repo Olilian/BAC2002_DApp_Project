@@ -9,8 +9,8 @@ describe("Invoice Factoring System", function () {
   
   const FACE_VALUE = ethers.parseUnits("10000", 6); // 10,000 USDC
   const MIN_BID_PERCENT = 90; // 90%
-  const AUCTION_DURATION = 24 * 60 * 60; // 24 hours
-  const DUE_DATE_OFFSET = 60 * 24 * 60 * 60; // 60 days
+  const AUCTION_DURATION = 5 * 60; // 5 minutes for demo
+  const DUE_DATE_OFFSET = 10 * 60; // 10 minutes for demo
   
   beforeEach(async function () {
     [owner, seller, buyer, lp1, lp2] = await ethers.getSigners();

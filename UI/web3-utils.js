@@ -180,11 +180,12 @@ async function getInvoice(invoiceId) {
 }
 
 // ─── Start auction ───────────────────────────────────────────────────────────
-async function startAuction(invoiceId, minBidPercent = 90, durationHours = 24) {
-  // Validate duration before sending — contract requires >= 1 hour
-  if (durationHours < 1) throw new Error('Auction duration must be at least 1 hour');
+async function startAuction(invoiceId, minBidPercent = 90, durationMinutes = 60) {
+  // Validate duration before sending — contract now allows >= 1 minute
+  if (durationMinutes < 1) throw new Error('Auction duration must be at least 1 minute');
+  if (durationMinutes > 10080) throw new Error('Auction duration must not exceed 10080 minutes (7 days)');
 
-  const durationSeconds = durationHours * 60 * 60;
+  const durationSeconds = durationMinutes * 60;
   const tx = await contracts.auction.startAuction(invoiceId, minBidPercent, durationSeconds);
   const receipt = await tx.wait();
 

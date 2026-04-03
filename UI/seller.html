@@ -1026,12 +1026,12 @@
                 )}</span>
               </div>
               <div class="field">
-                <label>Duration (hours)</label>
+                <label>Duration (minutes)</label>
                 <input type="number" id="duration-${
                   inv.id
-                }" value="24" min="1" max="168"
-                  placeholder="24" />
-                <span class="input-hint">Min 1 hour · Max 7 days (168 hrs)</span>
+                }" value="60" min="1" max="10080"
+                  placeholder="60" />
+                <span class="input-hint">Min 1 minute · Max 7 days (10080 mins)</span>
               </div>
             </div>
             <button class="btn btn-primary" style="width:100%"
@@ -1065,9 +1065,9 @@
           );
           return;
         }
-        if (!duration || duration < 1 || duration > 168) {
+        if (!duration || duration < 1 || duration > 10080) {
           web3Utils.showNotification(
-            "Duration must be between 1 and 168 hours",
+            "Duration must be between 1 and 10080 minutes (7 days)",
             "error",
           );
           return;
