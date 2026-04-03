@@ -65,13 +65,7 @@ npm install
 
 ### 2. Configure Environment
 
-Create your `.env` file:
-
-```bash
-cp .env.example .env
-```
-
-Fill in the required values:
+Create your `.env` file and fill in the required values:
 
 ```env
 SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID
